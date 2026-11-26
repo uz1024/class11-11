@@ -1,0 +1,3003 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Интерактивный урок — Модульный фреймворк (10 класс)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg-main: #F8FAFC;
+      --bg-card: #FFFFFF;
+      --text-main: #0F172A;
+      --text-muted: #475569;
+      --border-color: #E2E8F0;
+      --primary: #2563EB;
+      --primary-hover: #1D4ED8;
+      --success-bg: #DCFCE7;
+      --success-border: #16A34A;
+      --success-text: #15803D;
+      --danger-bg: #FFE4E6;
+      --danger-border: #E11D48;
+      --danger-text: #BE123C;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    .font-mono-code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .option-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      width: 100%;
+      text-align: left;
+      background: #FFFFFF;
+      border: 2px solid #E2E8F0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      color: #0F172A;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .option-card:hover {
+      border-color: #93C5FD;
+      background: #F8FAFC;
+    }
+
+    .option-card.selected {
+      border-color: #2563EB;
+      background: #EFF6FF;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .option-indicator {
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+      border: 2px solid #94A3B8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 13px;
+      flex-shrink: 0;
+      margin-top: 1px;
+      background: #FFFFFF;
+      color: transparent;
+    }
+
+    .option-card.selected .option-indicator {
+      background: #2563EB;
+      border-color: #2563EB;
+      color: #FFFFFF;
+    }
+
+    .timer-warn {
+      background-color: #FEF3C7 !important;
+      border-color: #F59E0B !important;
+      color: #B45309 !important;
+    }
+
+    .timer-danger {
+      background-color: #FFE4E6 !important;
+      border-color: #E11D48 !important;
+      color: #BE123C !important;
+      animation: pulse-danger 1s infinite;
+    }
+
+    @keyframes pulse-danger {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+
+    .giant-score {
+      font-size: clamp(4.5rem, 16vw, 13rem);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+    }
+
+    select.pair-select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 2px solid #CBD5E1;
+      background-color: #FFFFFF;
+      color: #0F172A;
+      font-size: 14px;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    select.pair-select:focus {
+      border-color: #2563EB;
+    }
+
+    input.code-input {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 2px solid #CBD5E1;
+      background-color: #FFFFFF;
+      color: #0F172A;
+      font-size: 18px;
+      font-weight: 700;
+      outline: none;
+    }
+
+    input.code-input:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col">
+
+  <!-- СКРЫТАЯ ПАНЕЛЬ УЧИТЕЛЯ (Alt+S или 5 кликов по верхнему бейджу) -->
+  <div id="teacherPanel" class="hidden fixed bottom-4 right-4 z-50 bg-slate-900 text-white p-5 rounded-2xl shadow-2xl border border-slate-700 max-w-md w-full">
+    <div class="flex items-center justify-between border-b border-slate-700 pb-2.5 mb-3">
+      <div class="flex items-center gap-2">
+        <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+        <span class="font-bold text-xs tracking-wider uppercase text-slate-200">Панель учителя (Тест / Демо)</span>
+      </div>
+      <button id="closeTeacherPanelBtn" type="button" class="text-slate-300 hover:text-white text-xs px-2.5 py-1 rounded bg-slate-800 cursor-pointer">
+        Закрыть (Alt+S)
+      </button>
+    </div>
+    <p class="text-xs text-slate-300 mb-3 leading-relaxed">
+      Расписание автостарта: <b>10:40</b> (60 мин, зачёт за 3 ур.), <b>11:30</b> (35 мин, зачёт за 2 ур.), <b>11:55</b> (60 мин), <b>12:20</b> (35 мин).
+    </p>
+    <div class="grid grid-cols-2 gap-2 mb-3">
+      <button id="btnForceStart60" type="button" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-2.5 px-3 rounded-xl transition cursor-pointer">
+        ▶ Старт 60 мин (3 ур.)
+      </button>
+      <button id="btnForceStart35" type="button" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs py-2.5 px-3 rounded-xl transition cursor-pointer">
+        ▶ Старт 35 мин (2 ур.)
+      </button>
+      <button id="btnForceWaiting" type="button" class="bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs py-2 px-3 rounded-xl transition cursor-pointer">
+        ⏳ Экран ожидания
+      </button>
+      <button id="btnForceEndScreen" type="button" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2 px-3 rounded-xl transition cursor-pointer">
+        🏁 Финальный экран
+      </button>
+      <button id="btnResetProgress" type="button" class="col-span-2 bg-rose-700 hover:bg-rose-600 text-white font-bold text-xs py-2 px-3 rounded-xl transition cursor-pointer">
+        ↺ Сбросить баллы, паузу и сгенерировать новый вариант
+      </button>
+    </div>
+    <div>
+      <div class="text-[11px] text-slate-400 mb-1.5 uppercase font-bold">Быстрый переход к этапу:</div>
+      <div class="grid grid-cols-5 gap-1.5" id="teacherStageJump"></div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО ОДНОКРАТНОЙ ПАУЗЫ УЧЕНИКА (ДО 5 МИНУТ) -->
+  <div id="pauseOverlay" class="hidden fixed inset-0 z-40 bg-slate-900/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl border-2 border-amber-400 shadow-2xl max-w-lg w-full p-8 text-center">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-extrabold uppercase tracking-wider mb-4">
+        ⏸ Урок поставлен на паузу
+      </div>
+      <h3 class="text-2xl font-black text-slate-900 mb-2">Личный перерыв (до 5 минут)</h3>
+      <p class="text-sm text-slate-600 mb-6 leading-relaxed">
+        Таймер текущего этапа остановлен. Когда будете готовы продолжить или когда истекут 5 минут, урок автоматически возобновится с той же секунды.
+      </p>
+      <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl py-5 px-6 mb-6">
+        <div class="text-xs font-extrabold uppercase tracking-widest text-amber-800 mb-1">Осталось времени паузы:</div>
+        <div id="pauseCountdownDisplay" class="font-mono-code text-5xl font-black text-amber-600">05:00</div>
+      </div>
+      <button id="btnResumeFromPause" type="button" class="w-full py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm shadow-md transition cursor-pointer">
+        ▶ Вернуться к уроку досрочно
+      </button>
+    </div>
+  </div>
+
+  <!-- 1. ЭКРАН ОЖИДАНИЯ ДО НАЧАЛА УРОКА -->
+  <div id="waitingScreen" class="flex-1 flex flex-col items-center justify-center p-4 md:p-8">
+    <div class="max-w-4xl w-full bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-12 text-center relative overflow-hidden">
+      <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500"></div>
+
+      <!-- Бейдж для вызова панели учителя (5 кликов) -->
+      <div id="secretTeacherBadge" class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-extrabold tracking-wider uppercase mb-6 cursor-pointer" title="Нажмите 5 раз или Alt+S для панели учителя">
+        <span id="courseMetaBadge">10 КЛАСС • ИНФОРМАТИКА И ИТ</span>
+        <span>•</span>
+        <span id="waitingBadgeModeText">ПОВТОРЕНИЕ И ЗАКРЕПЛЕНИЕ</span>
+      </div>
+
+      <h1 id="waitingChapterTitle" class="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight mb-4">
+        Название главы учебника
+      </h1>
+      <p id="waitingChapterSubtitle" class="text-base md:text-lg text-slate-600 max-w-2xl mx-auto mb-8">
+        Автоматический интерактивный урок из <b>10 этапов</b>. Приготовьте учебник и тетрадь с конспектом.
+      </p>
+
+      <!-- Таймер до ТОЛЬКО БЛИЖАЙШЕГО времени старта -->
+      <div class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-6 md:p-8 max-w-2xl mx-auto mb-8">
+        <div id="waitingTargetSlotLabel" class="text-xs font-extrabold uppercase tracking-widest text-slate-500 mb-2">
+          ДО БЛИЖАЙШЕГО АВТОМАТИЧЕСКОГО СТАРТА ОСТАЛОСЬ:
+        </div>
+        <div id="waitingCountdown" class="font-mono-code text-5xl md:text-7xl font-black text-blue-600 tracking-tight my-3">
+          00:00:00
+        </div>
+        <div class="flex flex-wrap items-center justify-center gap-4 text-sm text-slate-600 mt-4 pt-3 border-t border-slate-200">
+          <div>Текущее время: <span id="systemClockDisplay" class="font-mono-code font-bold text-slate-900">--:--:--</span></div>
+          <span class="text-slate-300">|</span>
+          <div>Ближайший старт: <span id="waitingNearestStartInfo" class="font-extrabold text-blue-700">--:--</span></div>
+        </div>
+      </div>
+
+      <!-- Памятка для ученика -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-left max-w-3xl mx-auto">
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <div class="text-blue-700 font-extrabold text-sm mb-1">📖 1. Учебник и перерыв</div>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Держите открытыми конспект и учебник. Один раз за урок доступна кнопка <b>Паузы (до 5 минут)</b>, если нужно отлучиться.
+          </p>
+        </div>
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <div class="text-emerald-700 font-extrabold text-sm mb-1">🎯 2. Условие зачёта этапа</div>
+          <p id="waitingPassRuleDesc" class="text-xs text-slate-600 leading-relaxed">
+            Пройдите требуемые уровни этапа, чтобы флаг усвоения наверху переключился на <b class="text-emerald-700">ДОСТАТОЧНО (+1 балл)</b>.
+          </p>
+        </div>
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <div class="text-amber-700 font-extrabold text-sm mb-1">🛡️ 3. Защита от прокликивания</div>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            На чтение каждого вопроса выделяется время перед активацией кнопки ответа. При ошибках растёт штрафная пауза и меняется вариант.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. ЭКРАН АКТИВНОГО УРОКА -->
+  <div id="lessonScreen" class="hidden flex-1 flex flex-col">
+    <!-- ВЕРХНЯЯ ЗАКРЕПЛЕННАЯ ПАНЕЛЬ -->
+    <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+      <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col gap-2.5">
+        <!-- Верхний ряд шапки -->
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <span id="headerStageBadge" class="px-3 py-1 rounded-lg bg-blue-600 text-white font-extrabold text-xs uppercase tracking-wider cursor-pointer" title="5 кликов или Alt+S — панель учителя">
+              Этап 1 из 10
+            </span>
+            <div>
+              <h2 id="headerStageTitle" class="text-base md:text-lg font-extrabold text-slate-900 leading-snug">
+                Название этапа
+              </h2>
+              <div class="flex items-center gap-2 text-xs text-slate-500">
+                <span id="headerStageRef">§ 1.01</span>
+                <span>•</span>
+                <span id="headerStageSubtitle" class="font-medium text-slate-600">Продвижение: Знание → Понимание → Применение</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Индикатор 10 этапов (точки) и счётчик баллов -->
+          <div class="flex items-center gap-4">
+            <div id="stageDotsContainer" class="hidden lg:flex items-center gap-1.5"></div>
+            <div class="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl">
+              <div class="text-xs font-bold text-slate-600">Баллы:</div>
+              <div id="headerTotalScore" class="font-mono-code text-sm font-black text-slate-900">0 / 10</div>
+              <div id="headerBonusScore" class="font-mono-code text-xs font-extrabold px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700" title="Бонусные баллы за дополнительные задания">+0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Нижний ряд шапки: Флаг усвоения этапа, Кнопка паузы и Таймер этапа -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
+          <!-- Флаг усвоения -->
+          <div id="headerMasteryFlag" class="px-3.5 py-2 rounded-xl border text-xs font-extrabold tracking-wide uppercase flex items-center gap-2 bg-rose-50 border-rose-300 text-rose-800">
+            <span id="headerMasteryIcon" class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+            <span id="headerMasteryText">УСВОЕНИЕ: НЕДОСТАТОЧНО (0 БАЛЛОВ)</span>
+          </div>
+
+          <!-- Блок паузы и таймера текущего этапа -->
+          <div class="flex flex-wrap items-center gap-2.5">
+            <button id="btnStudentPause" type="button" class="px-3.5 py-2 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-extrabold transition cursor-pointer flex items-center gap-1.5">
+              <span>⏸ Пауза (1 раз • до 5 мин)</span>
+            </button>
+
+            <div id="headerTimerBox" class="flex items-center gap-2.5 px-4 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Осталось на этап:</span>
+              <span id="headerStageTimer" class="font-mono-code text-xl md:text-2xl font-black tracking-tight">05:00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ОСНОВНАЯ РАБОЧАЯ ОБЛАСТЬ ЭТАПА -->
+    <main class="max-w-5xl w-full mx-auto px-4 py-6 flex-1 flex flex-col gap-5">
+      <!-- Степпер уровней внутри текущего этапа -->
+      <div id="levelStepper" class="grid grid-cols-1 sm:grid-cols-4 gap-2.5"></div>
+
+      <!-- Карточка активного задания -->
+      <div id="taskWorkspace" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 flex-1 flex flex-col justify-between"></div>
+    </main>
+  </div>
+
+  <!-- 3. ФИНАЛЬНЫЙ ЭКРАН (ДЛЯ УЧИТЕЛЯ ЧЕРЕЗ ВЕСЬ КЛАСС) -->
+  <div id="finalScreen" class="hidden flex-1 flex flex-col items-center justify-center p-6 min-h-screen bg-emerald-100">
+    <div id="finalCard" class="max-w-5xl w-full rounded-3xl border-4 border-emerald-500 p-8 md:p-12 text-center shadow-xl bg-white">
+      <div id="finalStatusBadge" class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-widest mb-2 bg-emerald-100 text-emerald-800 border border-emerald-300">
+        УРОК ЗАВЕРШЁН • ИТОГОВЫЙ РЕЗУЛЬТАТ
+      </div>
+
+      <h1 id="finalChapterTitle" class="text-xl md:text-2xl font-extrabold text-slate-700 mt-1">
+        Название главы учебника
+      </h1>
+
+      <!-- Сверхкрупный балл для обзора учителем через весь класс -->
+      <div id="finalGiantScore" class="giant-score font-mono-code font-black my-4 text-emerald-600">
+        0 / 10
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-4 mb-8">
+        <div class="px-5 py-2.5 rounded-2xl bg-slate-100 border border-slate-200 text-sm font-bold text-slate-700">
+          Выполнено уровней: <span id="finalLevelsCount" class="font-mono-code font-black text-slate-900">0 / 30</span>
+        </div>
+        <div class="px-5 py-2.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-sm font-bold text-indigo-900">
+          Бонус-заданий сверх нормы: <span id="finalBonusCount" class="font-mono-code font-black text-indigo-700">+0</span>
+        </div>
+      </div>
+
+      <!-- Сводка по каждому из 10 этапов -->
+      <div id="finalStageBreakdown" class="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-left"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      /***********************************************************************
+       * 0. УТИЛИТЫ РАНДОМИЗАЦИИ (ДОСТУПНЫ ВО ВСЕХ МОДУЛЯХ ЭТАПОВ)
+       ***********************************************************************/
+      function shuffle(arr) {
+        const copy = arr.slice();
+        for (let i = copy.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          const temp = copy[i];
+          copy[i] = copy[j];
+          copy[j] = temp;
+        }
+        return copy;
+      }
+
+      function pickOne(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      function pickMany(arr, count) {
+        return shuffle(arr).slice(0, count);
+      }
+
+      /***********************************************************************
+       * 1. МЕТАДАННЫЕ ГЛАВЫ И ИЗОЛИРОВАННЫЕ МОДУЛИ ЭТАПОВ (1..10 + БОНУСЫ)
+       * ---------------------------------------------------------------------
+       * КАК СОБИРАТЬ УРОК ВРУЧНУЮ ИЗ ОТДЕЛЬНЫХ ПРОМПТОВ:
+       * Каждый объект STAGE_01 ... STAGE_10 полностью автономен и не влияет
+       * на соседние разделы.
+       *
+       * Контракт модуля этапа:
+       * {
+       *   id: 1..10,
+       *   title: "Полное название этапа",
+       *   shortName: "Краткое имя для итоговой сводки",
+       *   ref: "§ X.XX, стр. Y–Z",
+       *   duration60Sec: 360, // длительность в 60-минутной версии (сек)
+       *   duration35Sec: 180, // длительность в 35-минутной версии (сек)
+       *   levels: [
+       *     function generateLevel1() { return TaskObject; }, // Уровень 1: Знание
+       *     function generateLevel2() { return TaskObject; }, // Уровень 2: Понимание
+       *     function generateLevel3() { return TaskObject; }  // Уровень 3: Применение
+       *   ]
+       * }
+       *
+       * Поддерживаемые форматы TaskObject:
+       * 1) type: "single"   -> options: [{ label, correct: true/false }, ...]
+       * 2) type: "multi"    -> options: [{ label, correct: true/false }, ...]
+       * 3) type: "matching" -> pairs: [{ left, right }], choices: ["...", "..."]
+       * 4) type: "input"    -> expectedAnswer: "...", placeholder: "...", helperAlphabet: "..."
+       ***********************************************************************/
+	const LESSON_META = {
+        StorageKey: "lesson_ch11_new_tech_v1", // регистр StorageKey сохранён строго под движок index.html
+        courseBadge: "10/11 КЛАСС • ИНФОРМАТИКА И ИТ • СТР. 198–209",
+        chapterTitle: "Глава 11. Новые технологии",
+        chapterSubtitle: "Автоматический интерактивный урок из <b>10 этапов</b> по материалам § 11.01–11.18 (стр. 198–209). Приготовьте учебник и тетрадь с конспектом."
+      };
+
+      // === НАЧАЛО НЕЗАВИСИМЫХ МОДУЛЕЙ ЭТАПОВ (ЗАМЕНЯЙТЕ ПО ОДНОМУ) ===
+	const STAGE_01 = {
+        id: 1,
+        title: "Этап 1. Технологии, образ жизни и ключевые понятия главы",
+        shortName: "1. Образ жизни",
+        ref: "§ 11.01, стр. 198",
+        duration60Sec: 360,
+        duration35Sec: 180,
+        levels: [
+          // Уровень 1 • Знание (matching, 4 из 5 ключевых слов со стр. 198)
+          function () {
+            const pool = [
+              {
+                left: "Эвристика",
+                right: "Открытие новых знаний через опыт"
+              },
+              {
+                left: "Биометрия",
+                right: "Измерение физических характеристик человека"
+              },
+              {
+                left: "Облачные технологии",
+                right: "Хранение данных на удалённых серверах в Интернете"
+              },
+              {
+                left: "Шифрование",
+                right: "Преобразование данных в зашифрованный код"
+              },
+              {
+                left: "Ключ",
+                right: "Последовательность или алгоритм для шифрования и расшифровки"
+              }
+            ];
+            return {
+              type: "matching",
+              badge: "Уровень 1 • Знание (§ 11.01, стр. 198)",
+              prompt: "Соберите стартовый словарь главы: подберите точное определение для каждого термина из блока «Ключевые слова»:",
+              hintRef: "§ 11.01, стр. 198: откройте рамку «КЛЮЧЕВЫЕ СЛОВА» в самом начале параграфа — там даны все 5 определений.",
+              pairs: pickMany(pool, 4),
+              choices: shuffle(pool.map(function (p) { return p.right; }))
+            };
+          },
+
+          // Уровень 2 • Понимание (single, даёт ЗАЧЁТ в 35-минутной версии)
+          function () {
+            const variants = [
+              {
+                prompt: "Сотруднику выдали рабочий смартфон, и теперь руководство ожидает ответов на письма и правок отчётов даже вечером после смены. Какое последствие такого режима подчёркивается в учебнике?",
+                ok: "Повышенный уровень стресса и усталости, так как человек работает дольше, чем официально признаёт компания",
+                w1: "Полный отказ компаний от использования электронной почты в рабочее время",
+                w2: "Снижение скорости мобильного интернета в общественном транспорте",
+                w3: "Запрет на редактирование текстовых документов вне офиса",
+                hint: "§ 11.01, стр. 198 (2-й абзац): прочитайте о негативном влиянии мобильных устройств на трудовую жизнь сотрудников."
+              },
+              {
+                prompt: "В клинике вместо обычной донорской пересадки предлагают вырастить новый орган методом тканевой инженерии с применением стволовых клеток. В чём главное преимущество этого метода?",
+                ok: "Орган выращивается из собственных клеток человека, поэтому организм его принимает и не отторгает",
+                w1: "Выращенный орган подходит сразу любому пациенту независимо от ДНК",
+                w2: "Тканевая инженерия применяется только для создания пластиковых протезов",
+                w3: "Процедура вообще не требует использования современных технологий",
+                hint: "§ 11.01, стр. 198 (5-й абзац): найдите абзац о медицине, стволовых клетках и проблеме отторжения чужеродных органов."
+              },
+              {
+                prompt: "Стремление покупать самые новые гаджеты ускоряет устаревание старой техники и ведёт к росту отходов. Как, согласно учебнику, организации противостоят этой экологической проблеме?",
+                ok: "Призывают сдавать старые устройства на переработку, а некоторые даже предлагают за это денежное вознаграждение",
+                w1: "Запрещают продажу смартфонов и ноутбуков сроком на пять лет",
+                w2: "Советуют хранить сломанную технику дома без утилизации",
+                w3: "Переводят все рабочие задачи обратно на бумажные бланки",
+                hint: "§ 11.01, стр. 198 (3-й абзац): посмотрите, как организации борются с увеличением отходов от устаревших технологий."
+              }
+            ];
+            const v = pickOne(variants);
+            return {
+              type: "single",
+              badge: "Уровень 2 • Понимание (§ 11.01, стр. 198)",
+              prompt: v.prompt,
+              hintRef: v.hint,
+              options: shuffle([
+                { label: v.ok, correct: true },
+                { label: v.w1, correct: false },
+                { label: v.w2, correct: false },
+                { label: v.w3, correct: false }
+              ])
+            };
+          },
+
+          // Уровень 3 • Применение (input, даёт ЗАЧЁТ в 60-минутной версии, строго КИРИЛЛИЦА)
+          function () {
+            const scenarios = [
+              {
+                cardTitle: "АНАЛИТИЧЕСКИЙ ОТЧЁТ №101 • РЕЖИМ «ВСЕГДА НА СВЯЗИ»",
+                cardBody: "Сотрудники правят документы в автобусе и отвечают на рабочие письма поздним вечером. Руководство считает это нормой, но врачи фиксируют переутомление персонала.",
+                q1: "1) Сфера (РАБОТА / МЕДИЦИНА / ЭКОЛОГИЯ)",
+                q2: "2) Главная угроза из текста (СТРЕСС / ОТХОДЫ / ОТТОРЖЕНИЕ)",
+                q3: "3) Ключевое решение или фактор (СМАРТФОН / ПЕРЕРАБОТКА / КЛЕТКИ)",
+                answer: "РАБОТА-СТРЕСС-СМАРТФОН",
+                hint: "§ 11.01, стр. 198 (1–2 абзацы): речь о трудовой сфере (РАБОТА), росте усталости и СТРЕССА из-за доступности через СМАРТФОН."
+              },
+              {
+                cardTitle: "АНАЛИТИЧЕСКИЙ ОТЧЁТ №102 • БИОЛАБОРАТОРИЯ",
+                cardBody: "Пациенту требуется замена повреждённого органа. Обычный донорский орган иммунная система может атаковать как чужеродный, поэтому применяют тканевую инженерию.",
+                q1: "1) Сфера (РАБОТА / МЕДИЦИНА / ЭКОЛОГИЯ)",
+                q2: "2) Главная проблема обычной пересадки (СТРЕСС / ОТХОДЫ / ОТТОРЖЕНИЕ)",
+                q3: "3) Из чего выращивают свой орган (СМАРТФОН / ПЕРЕРАБОТКА / КЛЕТКИ)",
+                answer: "МЕДИЦИНА-ОТТОРЖЕНИЕ-КЛЕТКИ",
+                hint: "§ 11.01, стр. 198 (5-й абзац): сфера — МЕДИЦИНА, проблема донорства — ОТТОРЖЕНИЕ, материал тканевой инженерии — собственные КЛЕТКИ."
+              },
+              {
+                cardTitle: "АНАЛИТИЧЕСКИЙ ОТЧЁТ №103 • УТИЛИЗАЦИЯ ГАДЖЕТОВ",
+                cardBody: "Пользователи массово обновляют устройства ради высокой эффективности. Старые приборы больше не используются и рискуют попасть на свалку.",
+                q1: "1) Сфера (РАБОТА / МЕДИЦИНА / ЭКОЛОГИЯ)",
+                q2: "2) Главная проблема устаревания (СТРЕСС / ОТХОДЫ / ОТТОРЖЕНИЕ)",
+                q3: "3) Мера, за которую иногда платят (СМАРТФОН / ПЕРЕРАБОТКА / КЛЕТКИ)",
+                answer: "ЭКОЛОГИЯ-ОТХОДЫ-ПЕРЕРАБОТКА",
+                hint: "§ 11.01, стр. 198 (3-й абзац): сфера — ЭКОЛОГИЯ, устаревшие технологии увеличивают ОТХОДЫ, выход — ПЕРЕРАБОТКА."
+              }
+            ];
+            const s = pickOne(scenarios);
+            return {
+              type: "input",
+              badge: "Уровень 3 • Применение (§ 11.01, стр. 198)",
+              prompt:
+                'Соберите 3-сегментный код анализа ситуации по данным карточки:' +
+                '<div class="mt-3 p-4 rounded-xl bg-slate-900 text-slate-100 font-mono-code text-xs md:text-sm font-normal leading-relaxed border border-slate-700">' +
+                  '<div class="text-blue-400 font-bold mb-1.5">' + s.cardTitle + '</div>' +
+                  '<div class="text-slate-200 mb-3">' + s.cardBody + '</div>' +
+                  '<div class="text-amber-300 text-xs space-y-1">' +
+                    '<div>' + s.q1 + '</div>' +
+                    '<div>' + s.q2 + '</div>' +
+                    '<div>' + s.q3 + '</div>' +
+                  '</div>' +
+                '</div>',
+              helperAlphabet: "Только русские буквы через дефис! Формат: СФЕРА-ПРОБЛЕМА-ФАКТОР (например: РАБОТА-СТРЕСС-СМАРТФОН)",
+              placeholder: "СЛОВО1-СЛОВО2-СЛОВО3",
+              expectedAnswer: s.answer,
+              hintRef: s.hint
+            };
+          }
+        ]
+      };
+
+      const STAGE_02 = {
+        id: 2,
+        title: "Этап 2. Трёхмерная (3D) печать",
+        shortName: "2. 3D-принтеры",
+        ref: "§ 11.02, стр. 198–199",
+        duration60Sec: 360,
+        duration35Sec: 180,
+        levels: [
+          // Уровень 1 • Знание (multi, 3 варианта сценариев)
+          function () {
+            const variants = [
+              {
+                prompt: "Отметьте ВСЕ верные утверждения о том, как работает 3D-принтер (§ 11.02, стр. 198):",
+                hint: "§ 11.02, стр. 198: прочитайте рамку «ВНИМАНИЕ!» внизу страницы — там описан послойный принцип печати.",
+                options: [
+                  { label: "Объект создаётся на основе плана-шаблона из программы моделирования", correct: true },
+                  { label: "Выстраиваются тысячи перекрёстных слоёв модели снизу вверх из нагретого пластика", correct: true },
+                  { label: "Создание объекта на 3D-принтере занимает много времени", correct: true },
+                  { label: "Устройство мгновенно вырезает деталь сверху вниз из куска льда", correct: false },
+                  { label: "Для 3D-печати не требуется компьютерная программа моделирования", correct: false }
+                ]
+              },
+              {
+                prompt: "Отметьте ВСЕ реальные примеры применения 3D-принтеров, названные в учебнике (§ 11.02, стр. 198–199):",
+                hint: "§ 11.02, стр. 198–199: проверьте список примеров использования 3D-печати и подпись к рисунку 11.01.",
+                options: [
+                  { label: "Изготовление протезов (например, руки на рис. 11.01), слепков костей и искусственных кровеносных сосудов", correct: true },
+                  { label: "Строительство домов в Китае с помощью крупноформатных принтеров", correct: true },
+                  { label: "Создание запасных частей в NASA для космической техники и транспортных средств", correct: true },
+                  { label: "Передача голосовых звонков по сотовым вышкам вместо технологии 2G", correct: false },
+                  { label: "Мгновенный перевод вывесок на иностранном языке через камеру", correct: false }
+                ]
+              },
+              {
+                prompt: "Отметьте ВСЕ верные утверждения об опасностях 3D-печати и биопластиках (§ 11.02, стр. 199):",
+                hint: "§ 11.02, стр. 199 (нижняя часть параграфа): найдите минусы 3D-печати и абзац про «биопластики».",
+                options: [
+                  { label: "3D-принтер можно использовать для создания оружия, что создаёт угрозу безопасности", correct: true },
+                  { label: "Обычный пластик не разлагается и представляет серьёзную экологическую проблему", correct: true },
+                  { label: "Биопластики делают из возобновляемых ресурсов — сельхозотходов или старого пластика", correct: true },
+                  { label: "Пластик для 3D-принтеров полностью растворяется в дождевой воде за один день", correct: false },
+                  { label: "Домашние персональные 3D-принтеры запрещено разрабатывать во всех странах", correct: false }
+                ]
+              }
+            ];
+            const v = pickOne(variants);
+            return {
+              type: "multi",
+              badge: "Уровень 1 • Знание (§ 11.02, стр. 198–199)",
+              prompt: v.prompt,
+              hintRef: v.hint,
+              options: shuffle(v.options)
+            };
+          },
+
+          // Уровень 2 • Понимание (matching, даёт ЗАЧЁТ в 35-минутной версии, 4 из 5 пар)
+          function () {
+            const pool = [
+              {
+                left: "После стихийного бедствия множество людей остались без крова",
+                right: "Быстрое строительство домов на крупноформатных 3D-принтерах"
+              },
+              {
+                left: "Поломка детали космического корабля прямо во время экспедиции",
+                right: "Печать запчасти (опыт NASA), чтобы не отменять миссию"
+              },
+              {
+                left: "Долгое ожидание донорского органа и риск несовместимости с кровью",
+                right: "Печать искусственных органов и кровеносных сосудов"
+              },
+              {
+                left: "Неразлагаемый пластик наносит серьёзный вред природе",
+                right: "Использование биопластиков из сельхозотходов и старого пластика"
+              },
+              {
+                left: "Опасность попадания запрещённых предметов к тем, кто не мог ими владеть",
+                right: "Проблема безопасности из-за возможности печатать оружие"
+              }
+            ];
+            return {
+              type: "matching",
+              badge: "Уровень 2 • Понимание (§ 11.02, стр. 199)",
+              prompt: "Сопоставьте реальную жизненную проблему или риск с решением (или следствием) из мира 3D-печати:",
+              hintRef: "§ 11.02, стр. 199: сравните два списка — потенциал 3D-принтера и его негативные эффекты.",
+              pairs: pickMany(pool, 4),
+              choices: shuffle(pool.map(function (p) { return p.right; }))
+            };
+          },
+
+          // Уровень 3 • Применение (input, даёт ЗАЧЁТ в 60-минутной версии, строго КИРИЛЛИЦА)
+          function () {
+            const scenarios = [
+              {
+                cardTitle: "ЗАКАЗ НА 3D-ПЕЧАТЬ №201 • МЧС И СТРОИТЕЛЬСТВО",
+                cardBody: "После наводнения нужно срочно переселить семьи, оставшиеся без крова. В проекте решено применить крупноформатный принтер и сырьё из переработанных сельхозотходов.",
+                answer: "СТРОЙКА-БИОПЛАСТИК-ДОМ",
+                hint: "§ 11.02, стр. 199: сектор — СТРОЙКА, эко-материал из сельхозотходов — БИОПЛАСТИК, печатаемый объект — ДОМ."
+              },
+              {
+                cardTitle: "ЗАКАЗ НА 3D-ПЕЧАТЬ №202 • ОРБИТАЛЬНЫЙ МОДУЛЬ",
+                cardBody: "Во время полёта треснуло крепление прибора. Чтобы не прерывать командные действия, экипаж запускает послойную отливку классическим нагретым сырьём.",
+                answer: "КОСМОС-ПЛАСТИК-ДЕТАЛЬ",
+                hint: "§ 11.02, стр. 198–199: сектор — КОСМОС, базовый материал 3D-принтера — ПЛАСТИК, объект замены — ДЕТАЛЬ."
+              },
+              {
+                cardTitle: "ЗАКАЗ НА 3D-ПЕЧАТЬ №203 • ЦЕНТР РЕАБИЛИТАЦИИ (РИС. 11.01)",
+                cardBody: "Пациенту изготавливают индивидуальную искусственную руку по цифровой модели, используя экологичный переработанный материал из старых пластиковых изделий.",
+                answer: "МЕДИЦИНА-БИОПЛАСТИК-ПРОТЕЗ",
+                hint: "§ 11.02, стр. 198–199 и рис. 11.01: сектор — МЕДИЦИНА, материал из вторсырья — БИОПЛАСТИК, объект — ПРОТЕЗ."
+              }
+            ];
+            const s = pickOne(scenarios);
+            return {
+              type: "input",
+              badge: "Уровень 3 • Применение (§ 11.02, стр. 198–199)",
+              prompt:
+                'Сформируйте производственный шифр заказа для 3D-лаборатории:' +
+                '<div class="mt-3 p-4 rounded-xl bg-slate-900 text-slate-100 font-mono-code text-xs md:text-sm font-normal leading-relaxed border border-slate-700">' +
+                  '<div class="text-emerald-400 font-bold mb-1.5">' + s.cardTitle + '</div>' +
+                  '<div class="text-slate-200 mb-3">' + s.cardBody + '</div>' +
+                  '<div class="text-amber-300 text-xs space-y-1">' +
+                    '<div>1) Сектор: СТРОЙКА / КОСМОС / МЕДИЦИНА</div>' +
+                    '<div>2) Материал: ПЛАСТИК / БИОПЛАСТИК</div>' +
+                    '<div>3) Объект печати: ДОМ / ДЕТАЛЬ / ПРОТЕЗ</div>' +
+                  '</div>' +
+                '</div>',
+              helperAlphabet: "Только русские буквы через дефис! Формат: СЕКТОР-МАТЕРИАЛ-ОБЪЕКТ (например: КОСМОС-ПЛАСТИК-ДЕТАЛЬ)",
+              placeholder: "СЕКТОР-МАТЕРИАЛ-ОБЪЕКТ",
+              expectedAnswer: s.answer,
+              hintRef: s.hint
+            };
+          }
+        ]
+      };
+
+      const STAGE_03 = {
+        id: 3,
+        title: "Этап 3. Поколения сотовой связи: 3G, 4G и 5G",
+        shortName: "3. Связь 3G–5G",
+        ref: "§ 11.03, стр. 199–200",
+        duration60Sec: 360,
+        duration35Sec: 240,
+        levels: [
+          // Уровень 1 • Знание (matching, 4 из 5 характеристик со стр. 199–200)
+          function () {
+            const pool = [
+              {
+                left: "Технология, по которой (по блоку «Внимание!») по-прежнему передаётся голос",
+                right: "Связь 2G"
+              },
+              {
+                left: "Появилась на рубеже 1990–2000-х; реальная скорость 2–3 Мбит/с (до 7 Мбит/с)",
+                right: "Связь 3G"
+              },
+              {
+                left: "Примерно в 5 раз быстрее 3G; файл 2 ГБ скачивается за 3–4 минуты вместо 30",
+                right: "Связь 4G"
+              },
+              {
+                left: "Передача данных до 100 раз быстрее; потенциал до 800 Гбит/с (30 HD-фильмов в секунду)",
+                right: "Связь 5G"
+              },
+              {
+                left: "Более быстрый отклик на запросы, улучшающий онлайн-игры и потоковое видео",
+                right: "Снижение задержки в 4G"
+              }
+            ];
+            return {
+              type: "matching",
+              badge: "Уровень 1 • Знание (§ 11.03, стр. 199–200)",
+              prompt: "Сопоставьте ключевые показатели и факты из учебника с нужным поколением сотовой связи:",
+              hintRef: "§ 11.03, стр. 199–200: обратите внимание на рамку «ВНИМАНИЕ!» и выделенные числа скоростей (2–3 Мбит/с, в 5 раз, 800 Гбит/с).",
+              pairs: pickMany(pool, 4),
+              choices: shuffle(pool.map(function (p) { return p.right; }))
+            };
+          },
+
+          // Уровень 2 • Понимание (single, даёт ЗАЧЁТ в 35-минутной версии)
+          function () {
+            const variants = [
+              {
+                prompt: "Во время мобильной онлайн-игры персонаж реагирует на команды с заметной паузой, а потоковое видео «подвисает». Какое из двух главных преимуществ 4G решает именно проблему быстрого отклика?",
+                ok: "Уменьшение задержки (сокращение времени ожидания ответа на запросы устройства)",
+                w1: "Передача обычных голосовых звонков вместо мобильного интернета",
+                w2: "Отказ от сотовых антенн в пользу проводного подключения",
+                w3: "Ограничение размера скачиваемых файлов до 2 ГБ",
+                hint: "§ 11.03, стр. 200 (2–3 абзацы): найдите два основных преимущества 4G и посмотрите, что влияет на игры и потоковое видео."
+              },
+              {
+                prompt: "Пассажир едет на междугороднем автобусе и замечает, что уровень сигнала 3G на смартфоне постоянно меняется — то полный, то слабый. Чем учебник объясняет это явление?",
+                ok: "Устройство подключается к ближайшей сотовой антенне, и сигнал меняется в зависимости от близости человека к ней",
+                w1: "Сеть 3G отключается каждый раз, когда человек открывает электронную почту",
+                w2: "Технология 3G передаёт данные быстрее 4G только в неподвижном здании",
+                w3: "Антенны 3G работают только для голосовых вызовов и не поддерживают движение",
+                hint: "§ 11.03, стр. 199 (последний абзац): прочитайте, как сигнал 3G передаётся от сотовых антенн при движении человека."
+              },
+              {
+                prompt: "Как, согласно § 11.03, высокоскоростная связь 5G с малой задержкой помогает в медицине при проведении сложных операций?",
+                ok: "Врачи-специалисты со всего мира могут удалённо контролировать операцию и консультировать — без перелётов, лучше отдыхая и готовясь",
+                w1: "Пациентам больше не нужны больницы, так как телефон сам проводит хирургическую операцию",
+                w2: "Врачам приходится тратить по 30 минут на загрузку каждого снимка",
+                w3: "Связь 5G используется в клиниках исключительно для навигации машин скорой помощи",
+                hint: "§ 11.03, стр. 200 (последний абзац): найдите пример влияния технологии 5G на медицину и работу врачей-специалистов."
+              }
+            ];
+            const v = pickOne(variants);
+            return {
+              type: "single",
+              badge: "Уровень 2 • Понимание (§ 11.03, стр. 199–200)",
+              prompt: v.prompt,
+              hintRef: v.hint,
+              options: shuffle([
+                { label: v.ok, correct: true },
+                { label: v.w1, correct: false },
+                { label: v.w2, correct: false },
+                { label: v.w3, correct: false }
+              ])
+            };
+          },
+
+          // Уровень 3 • Применение (input, даёт ЗАЧЁТ в 60-минутной версии, строго ЛАТИНИЦА + ЦИФРЫ)
+          function () {
+            const scenarios = [
+              {
+                cardTitle: "ТЕХПАСПОРТ БАЗОВОЙ СТАНЦИИ • ПРОФИЛЬ 3G",
+                cardBody: "Инженер сверяет паспортные характеристики сети третьего поколения по учебнику (стр. 199–200).",
+                q1: "1) Обозначение стандарта (3G / 4G / 5G)",
+                q2: "2) Максимальная скорость в теории, Мбит/с (одно число, стр. 199)",
+                q3: "3) Время загрузки файла 2 ГБ в этой сети, минут (стр. 200)",
+                answer: "3G-7-30",
+                hint: "§ 11.03, стр. 199–200: стандарт 3G, максимум в теории — 7 Мбит/с, файл 2 ГБ скачивается около 30 минут."
+              },
+              {
+                cardTitle: "ТЕХПАСПОРТ БАЗОВОЙ СТАНЦИИ • ПРОФИЛЬ 4G",
+                cardBody: "Оператор модернизирует вышку с 3G на четвёртое поколение и проверяет ключевые параметры в отчёте.",
+                q1: "1) Обозначение нового стандарта (3G / 4G / 5G)",
+                q2: "2) Во сколько раз он быстрее 3G (стр. 200)",
+                q3: "3) Поколение, по которому всё ещё идёт голос (блок «Внимание!», стр. 199: 1G / 2G / 3G)",
+                answer: "4G-5-2G",
+                hint: "§ 11.03, стр. 199–200: стандарт 4G примерно в 5 раз быстрее 3G, а голос по-прежнему передаётся по технологии 2G."
+              },
+              {
+                cardTitle: "ТЕХПАСПОРТ БАЗОВОЙ СТАНЦИИ • ПРОФИЛЬ 5G",
+                cardBody: "После реструктуризации радиосети инженеры фиксируют перспективные рекорды связи пятого поколения.",
+                q1: "1) Обозначение стандарта (3G / 4G / 5G)",
+                q2: "2) Во сколько раз быстрее передача данных после редизайна (стр. 200)",
+                q3: "3) Сколько HD-фильмов можно скачать за 1 секунду при скорости 800 Гбит/с (стр. 200)",
+                answer: "5G-100-30",
+                hint: "§ 11.03, стр. 200 (абзац про 5G): редизайн ускоряет передачу в 100 раз, а при 800 Гбит/с скачивается 30 фильмов HD за секунду."
+              }
+            ];
+            const s = pickOne(scenarios);
+            return {
+              type: "input",
+              badge: "Уровень 3 • Применение (§ 11.03, стр. 199–200)",
+              prompt:
+                'Введите 3-сегментный код конфигурации вышки по данным учебника:' +
+                '<div class="mt-3 p-4 rounded-xl bg-slate-900 text-slate-100 font-mono-code text-xs md:text-sm font-normal leading-relaxed border border-slate-700">' +
+                  '<div class="text-sky-400 font-bold mb-1.5">' + s.cardTitle + '</div>' +
+                  '<div class="text-slate-200 mb-3">' + s.cardBody + '</div>' +
+                  '<div class="text-amber-300 text-xs space-y-1">' +
+                    '<div>' + s.q1 + '</div>' +
+                    '<div>' + s.q2 + '</div>' +
+                    '<div>' + s.q3 + '</div>' +
+                  '</div>' +
+                '</div>',
+              helperAlphabet: "Только ЛАТИНСКАЯ буква G, цифры и дефисы! Примеры формата: 3G-7-30 или 4G-5-2G",
+              placeholder: "Например: 5G-100-30",
+              expectedAnswer: s.answer,
+              hintRef: s.hint
+            };
+          }
+        ]
+      };
+
+const STAGE_04 = {
+        id: 4,
+        title: "Этап 4. Искусственный интеллект",
+        shortName: "4. ИИ и автопилот",
+        ref: "§ 11.04, стр. 200–201",
+        duration60Sec: 360,
+        duration35Sec: 240,
+        levels: [
+          // Уровень 1 • Знание (matching, 4 из 5 ключевых примеров § 11.04)
+          function () {
+            const pool = [
+              {
+                left: "Алан Тьюринг",
+                right: "Взломал код Enigma и предложил дать машинам эвристику"
+              },
+              {
+                left: "Игра «Х и О» (крестики-нолики)",
+                right: "Простейший ИИ, который блокирует выигрышный ход игрока"
+              },
+              {
+                left: "Система Deep Blue",
+                right: "Первый компьютер, выигравший чемпионат мира по шахматам"
+              },
+              {
+                left: "Tesla Autopilot (рис. 11.02)",
+                right: "Беспилотный автомобиль, сам меняющий полосу и скорость"
+              },
+              {
+                left: "Siri и Google Now",
+                right: "Голосовые помощники в телефонах для поиска и команд"
+              }
+            ];
+            return {
+              type: "matching",
+              badge: "Уровень 1 • Знание (§ 11.04, стр. 200–201)",
+              prompt: "Сопоставьте известные примеры и имена из истории ИИ с их описанием в учебнике:",
+              hintRef: "§ 11.04, стр. 200–201: найдите в тексте имена Алан Тьюринг, Deep Blue, Tesla, Siri и игру «Х и О».",
+              pairs: pickMany(pool, 4),
+              choices: shuffle(pool.map(function (p) { return p.right; }))
+            };
+          },
+
+          // Уровень 2 • Понимание (single, даёт ЗАЧЁТ в 35-минутной версии)
+          function () {
+            const variants = [
+              {
+                prompt: "Беспилотный автомобиль попал в ДТП по вине автопилота. Какую нерешённую проблему этой ситуации выделяет учебник?",
+                ok: "Неясно, кто должен возмещать ущерб — пользователь или производитель автомобиля",
+                w1: "Автомобиль полностью теряет способность снижать скорость",
+                w2: "Запрещается использовать GPS-навигацию в городах",
+                w3: "Водитель обязан вручную переписывать код программы на месте",
+                hint: "§ 11.04, стр. 201 (раздел проблем ИИ): посмотрите первый пункт о ДТП с беспилотным автомобилем."
+              },
+              {
+                prompt: "Почему шахматный компьютер Deep Blue играл всё сильнее с каждой новой партией?",
+                ok: "Он учился на своих ошибках в предыдущих шахматных партиях",
+                w1: "Ему каждый день меняли корпус и монитор",
+                w2: "Он слушал голосовые подсказки гроссмейстеров через Siri",
+                w3: "Он не использовал правила программирования, а мыслил как человек",
+                hint: "§ 11.04, стр. 201 (2-й абзац): прочитайте, за счёт чего совершенствовался Deep Blue."
+              },
+              {
+                prompt: "Почему ИИ в смартфоне иногда неверно выполняет простую просьбу пользователя, даже если алгоритм поиска работает отлично?",
+                ok: "Если ИИ зависит от голосовой системы, он ограничен её ошибками в распознавании команд",
+                w1: "Смартфоны не поддерживают поиск в Интернете",
+                w2: "Голосовые помощники работают только в беспилотных автомобилях",
+                w3: "ИИ запрещено использовать для повседневных задач",
+                hint: "§ 11.04, стр. 201 (список проблем ИИ): проверьте 2-й и 3-й пункты о системах голосовой связи."
+              }
+            ];
+            const v = pickOne(variants);
+            return {
+              type: "single",
+              badge: "Уровень 2 • Понимание (§ 11.04, стр. 200–201)",
+              prompt: v.prompt,
+              hintRef: v.hint,
+              options: shuffle([
+                { label: v.ok, correct: true },
+                { label: v.w1, correct: false },
+                { label: v.w2, correct: false },
+                { label: v.w3, correct: false }
+              ])
+            };
+          },
+
+          // Уровень 3 • Применение (input, даёт ЗАЧЁТ в 60-минутной версии, строго КИРИЛЛИЦА)
+          function () {
+            const scenarios = [
+              {
+                cardTitle: "ДОСЬЕ ИИ №401 • DEEP BLUE",
+                cardBody: "Система играет партии, меняет поведение по опыту прошлых игр, но всё равно зависит от качества программного кода.",
+                answer: "ШАХМАТЫ-ОБУЧЕНИЕ-КОД",
+                hint: "§ 11.04, стр. 201: сфера — ШАХМАТЫ, принцип роста — ОБУЧЕНИЕ на ошибках, основа работы — программный КОД."
+              },
+              {
+                cardTitle: "ДОСЬЕ ИИ №402 • TESLA AUTOPILOT (РИС. 11.02)",
+                cardBody: "Машина сама держит полосу и скорость, делая поездки безопаснее. Но при аварии не решён вопрос ответственности.",
+                answer: "АВТО-ВОЖДЕНИЕ-ДТП",
+                hint: "§ 11.04, стр. 201: тип — АВТО, задача — ВОЖДЕНИЕ, главная юридическая проблема — ДТП."
+              },
+              {
+                cardTitle: "ДОСЬЕ ИИ №403 • SIRI И GOOGLE NOW",
+                cardBody: "Помогают людям с ограниченными возможностями искать в сети по речи, но система часто неточно понимает фразы.",
+                answer: "ГОЛОС-КОМАНДЫ-ОШИБКИ",
+                hint: "§ 11.04, стр. 201: тип — ГОЛОС, способ управления — КОМАНДЫ, проблема голосовой связи — ОШИБКИ."
+              }
+            ];
+            const s = pickOne(scenarios);
+            return {
+              type: "input",
+              badge: "Уровень 3 • Применение (§ 11.04, стр. 200–201)",
+              prompt:
+                'Соберите 3-сегментный код карточки ИИ:' +
+                '<div class="mt-3 p-4 rounded-xl bg-slate-900 text-slate-100 font-mono-code text-xs md:text-sm font-normal leading-relaxed border border-slate-700">' +
+                  '<div class="text-indigo-400 font-bold mb-1.5">' + s.cardTitle + '</div>' +
+                  '<div class="text-slate-200 mb-3">' + s.cardBody + '</div>' +
+                  '<div class="text-amber-300 text-xs space-y-1">' +
+                    '<div>1) Тип ИИ: ШАХМАТЫ / АВТО / ГОЛОС</div>' +
+                    '<div>2) Основная функция: ОБУЧЕНИЕ / ВОЖДЕНИЕ / КОМАНДЫ</div>' +
+                    '<div>3) Слабое место или основа: КОД / ДТП / ОШИБКИ</div>' +
+                  '</div>' +
+                '</div>',
+              helperAlphabet: "Только русские буквы через дефис! Формат: ТИП-ФУНКЦИЯ-ФАКТОР (например: АВТО-ВОЖДЕНИЕ-ДТП)",
+              placeholder: "СЛОВО1-СЛОВО2-СЛОВО3",
+              expectedAnswer: s.answer,
+              hintRef: s.hint
+            };
+          }
+        ]
+      };
+
+      const STAGE_05 = {
+        id: 5,
+        title: "Этап 5. Дополненная реальность и биометрия",
+        shortName: "5. AR и биометрия",
+        ref: "§ 11.05–11.06, стр. 201–203",
+        duration60Sec: 360,
+        duration35Sec: 240,
+        levels: [
+          // Уровень 1 • Знание (multi, 3 коротких варианта по § 11.05 и § 11.06)
+          function () {
+            const variants = [
+              {
+                prompt: "Отметьте ВСЕ верные факты о дополненной реальности (§ 11.05, стр. 201–202):",
+                hint: "§ 11.05, стр. 201–202: посмотрите рамку «ВНИМАНИЕ!» и примеры Google Glass и Nintendo 3DS.",
+                options: [
+                  { label: "Накладывает компьютерные изображения на реальный мир через камеру", correct: true },
+                  { label: "Примерами служат очки Google Glass (рис. 11.03) и карты консоли Nintendo 3DS", correct: true },
+                  { label: "Может переводить текст вывески прямо на экране камеры", correct: true },
+                  { label: "Полностью заменяет реальный мир без использования камеры", correct: false },
+                  { label: "Работает только с образцами ДНК пользователя", correct: false }
+                ]
+              },
+              {
+                prompt: "Отметьте ВСЕ верные факты о биометрической информации (§ 11.06, стр. 202):",
+                hint: "§ 11.06, стр. 202: прочитайте рамку «ВНИМАНИЕ!» и абзац о принципе взятия образцов.",
+                options: [
+                  { label: "Включает пульс, голос, отпечатки пальцев, радужку глаза и даже ДНК", correct: true },
+                  { label: "Для настройки берёт несколько образцов, чтобы получить среднее значение", correct: true },
+                  { label: "Применяется в сканерах ноутбуков, смартфонов и биометрических паспортах", correct: true },
+                  { label: "Для входа по голосу достаточно сказать команду ровно один раз без сохранения", correct: false },
+                  { label: "Биометрия используется только для создания 3D-персонажей в играх", correct: false }
+                ]
+              },
+              {
+                prompt: "Отметьте ВСЕ реальные риски дополненной реальности и биометрии (§ 11.05–11.06, стр. 202–203):",
+                hint: "§ 11.05–11.06, стр. 202–203: проверьте списки проблем в конце каждого параграфа.",
+                options: [
+                  { label: "Очки вроде Google Glass могут влиять на зрение и уязвимы при передаче данных", correct: true },
+                  { label: "Базу с личными биометрическими данными могут взломать злоумышленники", correct: true },
+                  { label: "Систему можно обмануть качественной подделкой отпечатка или записью голоса", correct: true },
+                  { label: "Обе технологии полностью исключают любые вопросы о частной жизни", correct: false },
+                  { label: "Камера дополненной реальности никогда не зависит от освещения", correct: false }
+                ]
+              }
+            ];
+            const v = pickOne(variants);
+            return {
+              type: "multi",
+              badge: "Уровень 1 • Знание (§ 11.05–11.06, стр. 201–203)",
+              prompt: v.prompt,
+              hintRef: v.hint,
+              options: shuffle(v.options)
+            };
+          },
+
+          // Уровень 2 • Понимание (matching, даёт ЗАЧЁТ в 35-минутной версии, 4 из 5 пар)
+          function () {
+            const pool = [
+              {
+                left: "Камера телефона заменяет иностранную вывеску её переводом на экране",
+                right: "Дополненная реальность (AR)"
+              },
+              {
+                left: "Пользователь 5 раз произносит «Привет» при настройке входа",
+                right: "Расчёт среднего биометрического образца"
+              },
+              {
+                left: "Спецпроход в аэропорту сверяет лицо и радужку глаза (рис. 11.04)",
+                right: "Биометрический паспортный контроль"
+              },
+              {
+                left: "Плохое освещение или неудачный ракурс камеры",
+                right: "Сбой распознавания объектов в AR"
+              },
+              {
+                left: "Хранение биологических данных в целях безопасности",
+                right: "Споры о вторжении в частную жизнь"
+              }
+            ];
+            return {
+              type: "matching",
+              badge: "Уровень 2 • Понимание (§ 11.05–11.06, стр. 201–203)",
+              prompt: "Сопоставьте конкретную ситуацию с технологией или проблемой из § 11.05–11.06:",
+              hintRef: "§ 11.05–11.06, стр. 201–203: соотнесите ситуации с примерами перевода вывесок, настройки голоса и рис. 11.04.",
+              pairs: pickMany(pool, 4),
+              choices: shuffle(pool.map(function (p) { return p.right; }))
+            };
+          },
+
+          // Уровень 3 • Применение (input, даёт ЗАЧЁТ в 60-минутной версии, строго КИРИЛЛИЦА + ЦИФРА)
+          function () {
+            const scenarios = [
+              {
+                cardTitle: "ТЕХКАРТА №501 • GOOGLE GLASS (РИС. 11.03)",
+                cardBody: "Носимые очки показывают названия улиц и новости поверх реального мира. Возможен негативный эффект для глаз.",
+                answer: "ОЧКИ-КАМЕРА-ЗРЕНИЕ",
+                hint: "§ 11.05, стр. 201–202: объект — ОЧКИ, захват реального мира — КАМЕРА, риск для здоровья — ЗРЕНИЕ."
+              },
+              {
+                cardTitle: "ТЕХКАРТА №502 • ГОЛОСОВОЙ ДОСТУП",
+                cardBody: "Чтобы компьютер запомнил среднее значение голоса, пользователь повторяет слово «Привет» заданное число раз. Возможен обман качественной аудиоподделкой.",
+                answer: "ГОЛОС-5-ЗАПИСЬ",
+                hint: "§ 11.06, стр. 202–203: метод — ГОЛОС, слово «Привет» говорят 5 раз, способ подделки — ЗАПИСЬ голосовой команды."
+              },
+              {
+                cardTitle: "ТЕХКАРТА №503 • АЭРОПОРТ (РИС. 11.04)",
+                cardBody: "На контроле сканируют документ, лицо и элемент глаза. Личные данные хранятся в базе, которую важно защитить от хакеров.",
+                answer: "ПАСПОРТ-РАДУЖКА-ВЗЛОМ",
+                hint: "§ 11.06, стр. 202–203 и рис. 11.04: документ — ПАСПОРТ, сканируемый элемент — РАДУЖКА, угроза базе данных — ВЗЛОМ."
+              }
+            ];
+            const s = pickOne(scenarios);
+            return {
+              type: "input",
+              badge: "Уровень 3 • Применение (§ 11.05–11.06, стр. 201–203)",
+              prompt:
+                'Введите 3-сегментный код проверки по техкарте:' +
+                '<div class="mt-3 p-4 rounded-xl bg-slate-900 text-slate-100 font-mono-code text-xs md:text-sm font-normal leading-relaxed border border-slate-700">' +
+                  '<div class="text-cyan-400 font-bold mb-1.5">' + s.cardTitle + '</div>' +
+                  '<div class="text-slate-200 mb-3">' + s.cardBody + '</div>' +
+                  '<div class="text-amber-300 text-xs space-y-1">' +
+                    '<div>1) Объект: ОЧКИ / ГОЛОС / ПАСПОРТ</div>' +
+                    '<div>2) Элемент из текста: КАМЕРА / 5 / РАДУЖКА</div>' +
+                    '<div>3) Угроза: ЗРЕНИЕ / ЗАПИСЬ / ВЗЛОМ</div>' +
+                  '</div>' +
+                '</div>',
+              helperAlphabet: "Только русские буквы, цифра 5 и дефисы! Примеры: ОЧКИ-КАМЕРА-ЗРЕНИЕ или ГОЛОС-5-ЗАПИСЬ",
+              placeholder: "ОБЪЕКТ-ЭЛЕМЕНТ-УГРОЗА",
+              expectedAnswer: s.answer,
+              hintRef: s.hint
+            };
+          }
+        ]
+      };
+
+      const STAGE_06 = {
+        id: 6,
+        title: "Этап 6. Облачные технологии и автоматический перевод",
+        shortName: "6. Облака и перевод",
+        ref: "§ 11.07–11.08, стр. 203–204",
+        duration60Sec: 360,
+        duration35Sec: 180,
+        levels: [
+          // Уровень 1 • Знание (matching, 4 из 5 базовых фактов § 11.07–11.08)
+          function () {
+            const pool = [
+              {
+                left: "Dropbox, Google Drive, Microsoft OneDrive",
+                right: "Онлайн-сервисы облачного хранения файлов"
+              },
+              {
+                left: "Игра Crackdown 3",
+                right: "Использует облако для расчёта разрушения зданий"
+              },
+              {
+                left: "Синхронизация с компьютером",
+                right: "Способ сохранить доступ к файлам без Интернета"
+              },
+              {
+                left: "Первый шаг компьютерного переводчика",
+                right: "Удаление из документа картинок и таблиц"
+              },
+              {
+                left: "Прямой перевод фразы «голубая машина»",
+                right: "Пример нарушения грамматики в Google Translate"
+              }
+            ];
+            return {
+              type: "matching",
+              badge: "Уровень 1 • Знание (§ 11.07–11.08, стр. 203–204)",
+              prompt: "Сопоставьте понятия и примеры из разделов об облаках и машинном переводе:",
+              hintRef: "§ 11.07–11.08, стр. 203–204: проверьте рамки «ВНИМАНИЕ!» и выделенные примеры (Dropbox, Crackdown 3, Google Translate).",
+              pairs: pickMany(pool, 4),
+              choices: shuffle(pool.map(function (p) { return p.right; }))
+            };
+          },
+
+          // Уровень 2 • Понимание (single, даёт ЗАЧЁТ в 35-минутной версии)
+          function () {
+            const variants = [
+              {
+                prompt: "У ученика дома идеальный Интернет, но он всё равно не может открыть файлы в облаке. Какую причину такого сбоя называет учебник?",
+                ok: "Перебои с подачей электроэнергии у выбранного облачного провайдера",
+                w1: "Облачные сервисы не работают с мобильными устройствами",
+                w2: "Все облачные сервисы автоматически удаляют файлы каждую неделю",
+                w3: "Для облака требуется кабель напрямую к серверу без Интернета",
+                hint: "§ 11.07, стр. 203 (правая колонка): прочитайте второй пункт проблем облачных вычислений."
+              },
+              {
+                prompt: "Зачем в игре Crackdown 3 визуализацию разрушения массивных зданий перенесли в облако?",
+                ok: "Чтобы получить высокое качество графики с небольшим влиянием на производительность консоли",
+                w1: "Чтобы играть без подключения к Интернету",
+                w2: "Чтобы автоматически переводить диалоги игры на французский язык",
+                w3: "Чтобы запретить доступ к игре с других устройств",
+                hint: "§ 11.07, стр. 203 (нижняя часть левой колонки): найдите абзац об игре Crackdown 3."
+              },
+              {
+                prompt: "Почему Google Translate иногда выдаёт грамматически неловкий перевод (как «машина синего цвета» с французского)?",
+                ok: "Он делает прямой перевод и оставляет исходную структуру предложения вместо смысла",
+                w1: "Он переводит только картинки и таблицы, удаляя обычный текст",
+                w2: "Он работает только на серверах Microsoft OneDrive",
+                w3: "Он вообще не умеет переводить целые веб-сайты и документы",
+                hint: "§ 11.08, стр. 204 (список проблем): прочитайте о прямом переводе и структуре предложения."
+              }
+            ];
+            const v = pickOne(variants);
+            return {
+              type: "single",
+              badge: "Уровень 2 • Понимание (§ 11.07–11.08, стр. 203–204)",
+              prompt: v.prompt,
+              hintRef: v.hint,
+              options: shuffle([
+                { label: v.ok, correct: true },
+                { label: v.w1, correct: false },
+                { label: v.w2, correct: false },
+                { label: v.w3, correct: false }
+              ])
+            };
+          },
+
+          // Уровень 3 • Применение (matching по прикладным кейсам, даёт ЗАЧЁТ в 60-минутной версии)
+          function () {
+            const pool = [
+              {
+                left: "У провайдера облака отключили электричество перед важной сдачей проекта",
+                right: "Спасёт заранее настроенная синхронизация файлов на свой ПК"
+              },
+              {
+                left: "Хакер получил доступ к чужому облачному хранилищу документов",
+                right: "Угроза кражи личных данных и средств с кредитной карты"
+              },
+              {
+                left: "Нужно редактировать презентацию по очереди с телефона, планшета и ноутбука (рис. 11.05)",
+                right: "Загрузить файл в облачный сервис (Drive, Dropbox или OneDrive)"
+              },
+              {
+                left: "В онлайн-переводчик загрузили страницу с диаграммами и таблицами",
+                right: "Программа удалит таблицы и картинки, переведя только текст"
+              },
+              {
+                left: "При переводе иностранного текста встретилось многозначное слово или идиома",
+                right: "Главная трудность: выбор нужного значения и слов без перевода"
+              }
+            ];
+            return {
+              type: "matching",
+              badge: "Уровень 3 • Применение (§ 11.07–11.08, стр. 203–204)",
+              prompt: "Подберите верный вывод или действие для каждой практической ситуации:",
+              hintRef: "§ 11.07–11.08, стр. 203–204: проверьте советы по синхронизации, безопасности облака, схеме рис. 11.05 и трудностям перевода.",
+              pairs: pickMany(pool, 4),
+              choices: shuffle(pool.map(function (p) { return p.right; }))
+            };
+          }
+        ]
+      };
+
+const STAGE_07 = {
+        id: 7,
+        title: "Этап 7. Голографические хранилища, оптические диски 4G и голограммы",
+        shortName: "7. Голография и 4G-диски",
+        ref: "§ 11.09–11.10, стр. 204–205",
+        duration60Sec: 360,
+        duration35Sec: 240,
+        levels: [
+          // Уровень 1 • Знание (matching, 4 из 5 базовых фактов § 11.09–11.10)
+          function () {
+            const pool = [
+              {
+                left: "Голографическое хранилище",
+                right: "Записывает биты параллельно по всему объёму носителя"
+              },
+              {
+                left: "Оптические диски 4-го поколения",
+                right: "Вмещают до 1 ТБ за счёт меньших ям и большего числа слоёв"
+              },
+              {
+                left: "Деннис Габор (1947 год)",
+                right: "Венгерский учёный, который изобрёл голограмму в Великобритании"
+              },
+              {
+                left: "Светоотделитель (рис. 11.06)",
+                right: "Делит лазерный луч на опорный и луч объекта"
+              },
+              {
+                left: "Голограммы на металлической плёнке (1980-е)",
+                right: "Защищают банкноты, кредитные карты и паспорта от подделки"
+              }
+            ];
+            return {
+              type: "matching",
+              badge: "Уровень 1 • Знание (§ 11.09–11.10, стр. 204–205)",
+              prompt: "Сопоставьте ключевые понятия и даты с их значением в учебнике:",
+              hintRef: "§ 11.09–11.10, стр. 204–205: проверьте рамку «ВНИМАНИЕ!», схему на рис. 11.06 и даты 1947 и 1980-е.",
+              pairs: pickMany(pool, 4),
+              choices: shuffle(pool.map(function (p) { return p.right; }))
+            };
+          },
+
+          // Уровень 2 • Понимание (single, даёт ЗАЧЁТ в 35-минутной версии)
+          function () {
+            const variants = [
+              {
+                prompt: "Почему голограмма меняет вид, если смотреть на неё под другим углом, в отличие от обычной фотографии?",
+                ok: "Каждая точка голограммы захватывает свет от каждой точки объекта, а не от одной",
+                w1: "Голограмму всегда рассматривают через специальные 3D-очки",
+                w2: "На плёнку записываются движущиеся видеокадры",
+                w3: "Голографическое изображение создаётся обычным объективом без лазера",
+                hint: "§ 11.10, стр. 205 (2-й абзац): сравните, как отражает свет точка на фотографии и точка на голограмме."
+              },
+              {
+                prompt: "Несмотря на долгий срок службы голографических хранилищ, их редко покупают. Какую главную проблему называет учебник?",
+                ok: "Высокую цену: считыватель стоит тысячи долларов, а каждый носитель — сотни",
+                w1: "Они хранят данные только на поверхности и быстро стираются",
+                w2: "На них нельзя записывать корпоративные архивы",
+                w3: "Они работают только при просмотре в белом свете",
+                hint: "§ 11.09, стр. 204 (4-й абзац): найдите фразу об одной из самых больших проблем голографического хранения."
+              },
+              {
+                prompt: "Почему голограммы, изобретённые в 1947 году, начали широко применять только после 1960-х годов?",
+                ok: "Для создания голограмм нужны лазеры, которые разработали лишь в 1960-х",
+                w1: "До 1960-х годов не существовало банковских банкнот и паспортов",
+                w2: "Оптические диски 4-го поколения появились только в конце XX века",
+                w3: "Учёные ждали появления 3D-очков для просмотра голограмм",
+                hint: "§ 11.10, стр. 205 (3-й абзац): прочитайте историю развития голографии с 1947 до 1960-х годов."
+              }
+            ];
+            const v = pickOne(variants);
+            return {
+              type: "single",
+              badge: "Уровень 2 • Понимание (§ 11.09–11.10, стр. 204–205)",
+              prompt: v.prompt,
+              hintRef: v.hint,
+              options: shuffle([
+                { label: v.ok, correct: true },
+                { label: v.w1, correct: false },
+                { label: v.w2, correct: false },
+                { label: v.w3, correct: false }
+              ])
+            };
+          },
+
+          // Уровень 3 • Применение (input, даёт ЗАЧЁТ в 60-минутной версии, строго КИРИЛЛИЦА, без Ё)
+          function () {
+            const scenarios = [
+              {
+                cardTitle: "ТЕХКАРТА №701 • АРХИВ ДАННЫХ (§ 11.09)",
+                cardBody: "Носитель хранит биты параллельно слой за слоем и медленно изнашивается, но считыватель стоит тысячи долларов.",
+                answer: "ХРАНИЛИЩЕ-ПАРАЛЛЕЛЬНО-ЦЕНА",
+                hint: "§ 11.09, стр. 204: объект — ХРАНИЛИЩЕ, способ записи — ПАРАЛЛЕЛЬНО, главная проблема — ЦЕНА."
+              },
+              {
+                cardTitle: "ТЕХКАРТА №702 • ОПТИЧЕСКИЙ НАКОПИТЕЛЬ 4G (§ 11.09)",
+                cardBody: "Новый диск вмещает до 1 ТБ (вместо 400 ГБ у 3-го поколения) благодаря меньшим углублениям и числу слоёв.",
+                answer: "ДИСК-ЯМЫ-ТЕРАБАЙТ",
+                hint: "§ 11.09, стр. 204 (последний абзац): объект — ДИСК, элемент записи — меньшие ЯМЫ, ёмкость — 1 ТЕРАБАЙТ."
+              },
+              {
+                cardTitle: "ТЕХКАРТА №703 • ГОЛОГРАММА НА КУПЮРЕ (§ 11.10)",
+                cardBody: "Объёмный знак записывают синхронизированным световым лучом и наносят на банкноты и паспорта против подделки.",
+                answer: "ГОЛОГРАММА-ЛАЗЕР-ЗАЩИТА",
+                hint: "§ 11.10, стр. 204–205: объект — ГОЛОГРАММА, источник света — ЛАЗЕР, цель на банкнотах — ЗАЩИТА."
+              }
+            ];
+            const s = pickOne(scenarios);
+            return {
+              type: "input",
+              badge: "Уровень 3 • Применение (§ 11.09–11.10, стр. 204–205)",
+              prompt:
+                'Соберите 3-сегментный код карточки:' +
+                '<div class="mt-3 p-4 rounded-xl bg-slate-900 text-slate-100 font-mono-code text-xs md:text-sm font-normal leading-relaxed border border-slate-700">' +
+                  '<div class="text-purple-400 font-bold mb-1.5">' + s.cardTitle + '</div>' +
+                  '<div class="text-slate-200 mb-3">' + s.cardBody + '</div>' +
+                  '<div class="text-amber-300 text-xs space-y-1">' +
+                    '<div>1) Объект: ХРАНИЛИЩЕ / ДИСК / ГОЛОГРАММА</div>' +
+                    '<div>2) Основа работы: ПАРАЛЛЕЛЬНО / ЯМЫ / ЛАЗЕР</div>' +
+                    '<div>3) Ключевой факт: ЦЕНА / ТЕРАБАЙТ / ЗАЩИТА</div>' +
+                  '</div>' +
+                '</div>',
+              helperAlphabet: "Только русские буквы через дефис! Формат: ОБЪЕКТ-ОСНОВА-ФАКТ (например: ДИСК-ЯМЫ-ТЕРАБАЙТ)",
+              placeholder: "СЛОВО1-СЛОВО2-СЛОВО3",
+              expectedAnswer: s.answer,
+              hintRef: s.hint
+            };
+          }
+        ]
+      };
+
+      const STAGE_08 = {
+        id: 8,
+        title: "Этап 8. Квантовая криптография и робототехника",
+        shortName: "8. Крипто и роботы",
+        ref: "§ 11.11–11.12, стр. 205–206",
+        duration60Sec: 360,
+        duration35Sec: 180,
+        levels: [
+          // Уровень 1 • Знание (matching, 4 из 5 базовых понятий § 11.11–11.12)
+          function () {
+            const pool = [
+              {
+                left: "Фотоны в квантовой криптографии",
+                right: "Небольшие пакеты света, с помощью которых создают ключ"
+              },
+              {
+                left: "Поляризация",
+                right: "Колебание световых частиц по отдельности в разных направлениях"
+              },
+              {
+                left: "Славянское слово robota",
+                right: "Происхождение слова «робот» — означает «раб» или «работа»"
+              },
+              {
+                left: "Датчики робота",
+                right: "Передают в процессор данные о среде для выбора действия"
+              },
+              {
+                left: "Робот ASIMO",
+                right: "Человекоподобный робот, который бегает, прыгает и узнаёт людей"
+              }
+            ];
+            return {
+              type: "matching",
+              badge: "Уровень 1 • Знание (§ 11.11–11.12, стр. 205–206)",
+              prompt: "Сопоставьте термины из разделов о квантовой криптографии и роботах с их определениями:",
+              hintRef: "§ 11.11–11.12, стр. 205: проверьте рамки «ВНИМАНИЕ!» и выделенные термины (фотоны, поляризация, robota, ASIMO).",
+              pairs: pickMany(pool, 4),
+              choices: shuffle(pool.map(function (p) { return p.right; }))
+            };
+          },
+
+          // Уровень 2 • Понимание (single, даёт ЗАЧЁТ в 35-минутной версии)
+          function () {
+            const variants = [
+              {
+                prompt: "Чем квантовая криптография принципиально отличается от обычного шифрования данных?",
+                ok: "Она использует законы физики и поток фотонов вместо математических алгоритмов",
+                w1: "Она вообще не использует ключ для шифрования и расшифровки",
+                w2: "Она передаёт данные только через сотовые вышки 3G",
+                w3: "Она уже безошибочно работает на любых расстояниях по всему миру",
+                hint: "§ 11.11, стр. 205 (1-й абзац): сравните основу обычных методов шифрования и квантовой криптографии."
+              },
+              {
+                prompt: "Почему перехватить и незаметно прочитать ключ квантовой криптографии почти невозможно?",
+                ok: "Активность поляризованных фотонов нельзя точно измерить, не изменив их поляризацию",
+                w1: "Оптоволоконный кабель автоматически уничтожает данные через 60 секунд",
+                w2: "Ключ состоит из обычного пароля, который меняется каждый час",
+                w3: "Данные передаются в виде голограммы на металлической плёнке",
+                hint: "§ 11.11, стр. 205 (5-й абзац): прочитайте, что происходит при попытке измерить поляризованные фотоны."
+              },
+              {
+                prompt: "Почему на химических заводах и конвейерах (рис. 11.07) выгодно использовать роботов вместо людей?",
+                ok: "Роботы выполняют рутинные задачи и работают в опасной для человека атмосфере",
+                w1: "Роботы сами придумывают новые цели без программирования",
+                w2: "Люди никогда не беспокоятся из-за замены работников роботами",
+                w3: "Заводским роботам не нужны ни процессор, ни датчики",
+                hint: "§ 11.12, стр. 206 (список «Роботы полезны»): найдите 1-й и 2-й пункты о рутине и химическом заводе."
+              }
+            ];
+            const v = pickOne(variants);
+            return {
+              type: "single",
+              badge: "Уровень 2 • Понимание (§ 11.11–11.12, стр. 205–206)",
+              prompt: v.prompt,
+              hintRef: v.hint,
+              options: shuffle([
+                { label: v.ok, correct: true },
+                { label: v.w1, correct: false },
+                { label: v.w2, correct: false },
+                { label: v.w3, correct: false }
+              ])
+            };
+          },
+
+          // Уровень 3 • Применение (input, даёт ЗАЧЁТ в 60-минутной версии, строго КИРИЛЛИЦА + ЦИФРЫ)
+          function () {
+            const scenarios = [
+              {
+                cardTitle: "ИНЖЕНЕРНАЯ СВОДКА №801 • ОПТОВОЛОКОННЫЙ КАНАЛ",
+                cardBody: "Защищённый канал шифрует ключ потоком световых частиц и пока проверен на короткой дистанции (в км).",
+                answer: "КРИПТО-ФОТОНЫ-60",
+                hint: "§ 11.11, стр. 205: раздел — КРИПТО, частицы света — ФОТОНЫ, текущая рабочая дистанция — 60 км."
+              },
+              {
+                cardTitle: "ИНЖЕНЕРНАЯ СВОДКА №802 • СБОРОЧНАЯ ЛИНИЯ (РИС. 11.07)",
+                cardBody: "На производстве к руке-роботу крепят элементы, которые считывают данные об окружающей среде.",
+                answer: "РОБОТ-ДАТЧИКИ-ЗАВОД",
+                hint: "§ 11.12, стр. 205–206 и рис. 11.07: раздел — РОБОТ, считывают среду — ДАТЧИКИ, место работы — ЗАВОД."
+              },
+              {
+                cardTitle: "ИНЖЕНЕРНАЯ СВОДКА №803 • ОПАСНАЯ АТМОСФЕРА",
+                cardBody: "В опасном химическом цехе вместо людей работает машина, чьими движениями управляет главный вычислительный узел.",
+                answer: "РОБОТ-ПРОЦЕССОР-ХИМИЯ",
+                hint: "§ 11.12, стр. 205–206: раздел — РОБОТ, управляет движением — ПРОЦЕССОР, пример опасной среды — ХИМИЯ."
+              }
+            ];
+            const s = pickOne(scenarios);
+            return {
+              type: "input",
+              badge: "Уровень 3 • Применение (§ 11.11–11.12, стр. 205–206)",
+              prompt:
+                'Соберите 3-сегментный инженерный код:' +
+                '<div class="mt-3 p-4 rounded-xl bg-slate-900 text-slate-100 font-mono-code text-xs md:text-sm font-normal leading-relaxed border border-slate-700">' +
+                  '<div class="text-emerald-400 font-bold mb-1.5">' + s.cardTitle + '</div>' +
+                  '<div class="text-slate-200 mb-3">' + s.cardBody + '</div>' +
+                  '<div class="text-amber-300 text-xs space-y-1">' +
+                    '<div>1) Раздел: КРИПТО / РОБОТ</div>' +
+                    '<div>2) Узел или частицы: ФОТОНЫ / ДАТЧИКИ / ПРОЦЕССОР</div>' +
+                    '<div>3) Предел или место: 60 / ЗАВОД / ХИМИЯ</div>' +
+                  '</div>' +
+                '</div>',
+              helperAlphabet: "Только русские буквы, цифры и дефисы! Примеры: КРИПТО-ФОТОНЫ-60 или РОБОТ-ДАТЧИКИ-ЗАВОД",
+              placeholder: "РАЗДЕЛ-УЗЕЛ-ПАРАМЕТР",
+              expectedAnswer: s.answer,
+              hintRef: s.hint
+            };
+          }
+        ]
+      };
+
+      const STAGE_09 = {
+        id: 9,
+        title: "Этап 9. QR-коды и носимые вычислительные устройства",
+        shortName: "9. QR и гаджеты",
+        ref: "§ 11.13–11.14, стр. 206–207",
+        duration60Sec: 360,
+        duration35Sec: 180,
+        levels: [
+          // Уровень 1 • Знание (multi, 3 коротких варианта по § 11.13–11.14)
+          function () {
+            const variants = [
+              {
+                prompt: "Отметьте ВСЕ верные факты о QR-кодах (§ 11.13, стр. 206):",
+                hint: "§ 11.13, стр. 206: посмотрите рамку «ВНИМАНИЕ!» и список способов использования QR-кодов.",
+                options: [
+                  { label: "Это штрих-код быстрого ответа из чёрных и белых квадратов (рис. 11.08)", correct: true },
+                  { label: "Сканируются камерой и дают ссылку на информационную страницу", correct: true },
+                  { label: "Используются в тренажёрных залах, на продуктах питания и в журналах", correct: true },
+                  { label: "Работают только через оптоволоконный кабель без камеры", correct: false },
+                  { label: "Всегда открывают веб-страницы без подключения к Интернету", correct: false }
+                ]
+              },
+              {
+                prompt: "Отметьте ВСЕ верные факты о носимых устройствах (§ 11.14, стр. 207):",
+                hint: "§ 11.14, стр. 207: проверьте рамку «ВНИМАНИЕ!» и абзацы про фитнес-устройства, умные часы и футболки.",
+                options: [
+                  { label: "Две основные формы — фитнес-устройства и смарт-часы (рис. 11.09)", correct: true },
+                  { label: "Фитнес-браслеты считают шаги, сон, калории и будят вибрацией", correct: true },
+                  { label: "К носимым также относят Google Glass и футболки с анимацией .gif", correct: true },
+                  { label: "Смарт-часы вообще не умеют подключаться к смартфону", correct: false },
+                  { label: "Технологичные футболки созданы исключительно для хирургических операций", correct: false }
+                ]
+              },
+              {
+                prompt: "Отметьте ВСЕ реальные проблемы носимых гаджетов и QR-кодов (§ 11.13–11.14, стр. 206–207):",
+                hint: "§ 11.13–11.14, стр. 206–207: посмотрите списки проблем в нижней части обоих параграфов.",
+                options: [
+                  { label: "Носимые устройства легко впитывают влагу и могут повредиться без влагозащиты", correct: true },
+                  { label: "Передачу данных по Bluetooth и беспроводным сетям могут попытаться взломать", correct: true },
+                  { label: "QR-код плохо читается при слабом свете или при тексте слишком близко к коду", correct: true },
+                  { label: "QR-коды можно как угодно растягивать — искажение не мешает сканированию", correct: false },
+                  { label: "Защита от влаги делает умные часы намного дешевле", correct: false }
+                ]
+              }
+            ];
+            const v = pickOne(variants);
+            return {
+              type: "multi",
+              badge: "Уровень 1 • Знание (§ 11.13–11.14, стр. 206–207)",
+              prompt: v.prompt,
+              hintRef: v.hint,
+              options: shuffle(v.options)
+            };
+          },
+
+          // Уровень 2 • Понимание (single, даёт ЗАЧЁТ в 35-минутной версии)
+          function () {
+            const variants = [
+              {
+                prompt: "Почему умные часы (Apple, Sony, Pebble и др.), по данным учебника, менее популярны, чем простые фитнес-браслеты?",
+                ok: "В основном из-за их более высокой цены",
+                w1: "Они не умеют считать шаги и отслеживать сон",
+                w2: "Их нельзя носить на запястье",
+                w3: "Они работают только в тренажёрных залах",
+                hint: "§ 11.14, стр. 207 (4-й абзац): найдите объяснение, почему «умные часы не очень популярны»."
+              },
+              {
+                prompt: "Для чего, согласно учебнику, предназначены технологичные футболки с сообщениями или .gif-эквалайзером?",
+                ok: "Исключительно для того, чтобы выглядеть стильно и модно",
+                w1: "Для измерения пульса и сожжённых калорий",
+                w2: "Для шифрования банковских данных через Bluetooth",
+                w3: "Для сканирования QR-кодов на упаковках продуктов",
+                hint: "§ 11.14, стр. 207 (5-й абзац): прочитайте последнее предложение о технологичных футболках."
+              },
+              {
+                prompt: "Зачем производители размещают QR-коды на тренажёрах в спортзале и на упаковках продуктов питания?",
+                ok: "Чтобы дать подробную инструкцию или сведения о пищевой ценности, не перегружая текст на объекте",
+                w1: "Чтобы заменить обычную камеру смартфона фитнес-браслетом",
+                w2: "Чтобы защитить упаковку от попадания влаги",
+                w3: "Чтобы пользователь мог открыть ссылку без Интернета",
+                hint: "§ 11.13, стр. 206 (список применений): проверьте пункты про тренажёрные залы, продукты и объём текста."
+              }
+            ];
+            const v = pickOne(variants);
+            return {
+              type: "single",
+              badge: "Уровень 2 • Понимание (§ 11.13–11.14, стр. 206–207)",
+              prompt: v.prompt,
+              hintRef: v.hint,
+              options: shuffle([
+                { label: v.ok, correct: true },
+                { label: v.w1, correct: false },
+                { label: v.w2, correct: false },
+                { label: v.w3, correct: false }
+              ])
+            };
+          },
+
+          // Уровень 3 • Применение (matching по прикладным кейсам, даёт ЗАЧЁТ в 60-минутной версии)
+          function () {
+            const pool = [
+              {
+                left: "Дизайнер сжал QR-код на этикетке по ширине, и он исказился",
+                right: "Камера не сможет просканировать код и выдать ссылку"
+              },
+              {
+                left: "На рекламном плакате текст и картинку напечатали вплотную к QR-коду",
+                right: "Недостаток свободного места мешает распознаванию кода"
+              },
+              {
+                left: "Покупатель отсканировал QR-код в подвальном магазине без связи",
+                right: "Страница не откроется без стабильного подключения к Интернету"
+              },
+              {
+                left: "Спортсмен бегает под дождём в незащищённом фитнес-трекере",
+                right: "Устройство впитает влагу и может выйти из строя"
+              },
+              {
+                left: "Смарт-часы постоянно обмениваются данными с телефоном по Bluetooth",
+                right: "Риск взлома беспроводного соединения и утечки личных данных"
+              }
+            ];
+            return {
+              type: "matching",
+              badge: "Уровень 3 • Применение (§ 11.13–11.14, стр. 206–207)",
+              prompt: "Проведите диагностику: подберите точное последствие для каждой практической ситуации:",
+              hintRef: "§ 11.13–11.14, стр. 206–207: сверьтесь со списками проблем QR-кодов (стр. 206) и носимых устройств (стр. 207).",
+              pairs: pickMany(pool, 4),
+              choices: shuffle(pool.map(function (p) { return p.right; }))
+            };
+          }
+        ]
+      };
+
+const STAGE_10 = {
+        id: 10,
+        title: "Этап 10. ТВ сверхвысокой чёткости, улучшение зрения, VR и итоги",
+        shortName: "10. 4K/8K, VR и итог",
+        ref: "§ 11.15–11.18, стр. 207–209",
+        duration60Sec: 360,
+        duration35Sec: 240,
+        levels: [
+          // Уровень 1 • Знание (matching, 4 из 5 базовых фактов § 11.15–11.18)
+          function () {
+            const pool = [
+              {
+                left: "Формат 2K (HD)",
+                right: "Мониторы 1920×1080 и сверхширокие экраны 2560×1080"
+              },
+              {
+                left: "Очки и линзы для улучшения зрения",
+                right: "Фильтруют световой сигнал для слабовидящих и дальтоников"
+              },
+              {
+                left: "Два канала камеры в VR-гарнитуре",
+                right: "Имитируют поле зрения для левого и правого глаза"
+              },
+              {
+                left: "Google Cardboard",
+                right: "Дешёвый VR из картонной конструкции и мобильного телефона"
+              },
+              {
+                left: "Стимулы для утилизации (§ 11.17–11.18)",
+                right: "Помогают не выбрасывать старые приборы на свалки"
+              }
+            ];
+            return {
+              type: "matching",
+              badge: "Уровень 1 • Знание (§ 11.15–11.18, стр. 207–209)",
+              prompt: "Сопоставьте технологии и понятия из заключительных параграфов главы с их описанием:",
+              hintRef: "§ 11.15–11.18, стр. 207–209: проверьте рамки «ВНИМАНИЕ!», абзац о Google Cardboard и итог об утилизации.",
+              pairs: pickMany(pool, 4),
+              choices: shuffle(pool.map(function (p) { return p.right; }))
+            };
+          },
+
+          // Уровень 2 • Понимание (single, даёт ЗАЧЁТ в 35-минутной версии)
+          function () {
+            const variants = [
+              {
+                prompt: "Почему многие потребители не спешат покупать телевизоры 4K и 8K, даже зная об их чёткости?",
+                ok: "Из-за нехватки контента (телепередач и игр) и высоких требований к скорости сети для онлайн-просмотра",
+                w1: "Потому что экраны 4K имеют меньше пикселей, чем стандартные мониторы 2K",
+                w2: "Потому что фильмы в кинотеатрах вообще не снимаются в разрешении 4K",
+                w3: "Потому что на экранах 4K невозможно показывать цветное изображение",
+                hint: "§ 11.15, стр. 207 (последний абзац): найдите главную проблему 4K и 8K, связанную с контентом и сетью."
+              },
+              {
+                prompt: "Пользователь надел VR-гарнитуру и вскоре почувствовал сильное укачивание. В чём причина этой проблемы по учебнику?",
+                ok: "В несовершенной калибровке и разнице между тем, что человек видит и что чувствует",
+                w1: "В том, что гарнитура всегда использует только один канал камеры",
+                w2: "В нехватке фильмов в разрешении 8K для мобильных телефонов",
+                w3: "В невозможности подключить к шлему клавиатуру или контроллер",
+                hint: "§ 11.17, стр. 208 (список проблем VR): прочитайте 1-й пункт о калибровке и укачивании."
+              },
+              {
+                prompt: "Для чего виртуальную реальность используют в медицине и авиасимуляторах, помимо компьютерных игр?",
+                ok: "Чтобы врачи и пилоты получали практический опыт и уверенность в сложных и военных ситуациях",
+                w1: "Чтобы полностью заменить настоящих хирургов и пилотов картонными очками",
+                w2: "Чтобы снизить стоимость производства телевизоров сверхвысокой чёткости",
+                w3: "Чтобы фильтровать цвета для людей с дальтонизмом",
+                hint: "§ 11.17, стр. 208 (4–5 абзацы): найдите примеры применения VR в хирургии и учебных программах."
+              }
+            ];
+            const v = pickOne(variants);
+            return {
+              type: "single",
+              badge: "Уровень 2 • Понимание (§ 11.15–11.18, стр. 207–209)",
+              prompt: v.prompt,
+              hintRef: v.hint,
+              options: shuffle([
+                { label: v.ok, correct: true },
+                { label: v.w1, correct: false },
+                { label: v.w2, correct: false },
+                { label: v.w3, correct: false }
+              ])
+            };
+          },
+
+          // Уровень 3 • Применение (input, даёт ЗАЧЁТ в 60-минутной версии, строго КИРИЛЛИЦА, без Ё)
+          function () {
+            const scenarios = [
+              {
+                cardTitle: "КАРТА ЭКСПЕРТА №1001 • ТВ СВЕРХВЫСОКОЙ ЧЕТКОСТИ (§ 11.15)",
+                cardBody: "Семья купила новый 4K-экран, но повседневных передач в таком формате мало, а онлайн-трансляция тормозит из-за пропускной способности.",
+                answer: "ТЕЛЕВИЗОР-КОНТЕНТ-СЕТЬ",
+                hint: "§ 11.15, стр. 207: устройство — ТЕЛЕВИЗОР, главная нехватка — КОНТЕНТ, ограничение для стриминга — СЕТЬ."
+              },
+              {
+                cardTitle: "КАРТА ЭКСПЕРТА №1002 • КОРРЕКЦИЯ ВОСПРИЯТИЯ (§ 11.16)",
+                cardBody: "Дальтонику подбирают индивидуальные контактные элементы, фильтрующие сигнал так, чтобы он лучше различал оттенки.",
+                answer: "ЗРЕНИЕ-ЛИНЗЫ-ЦВЕТА",
+                hint: "§ 11.16, стр. 208: область — ЗРЕНИЕ, контактное средство — ЛИНЗЫ, что помогают различать дальтоникам — ЦВЕТА."
+              },
+              {
+                cardTitle: "КАРТА ЭКСПЕРТА №1003 • ВИРТУАЛЬНАЯ РЕАЛЬНОСТЬ (§ 11.17)",
+                cardBody: "В тесной комнате игрок в VR-гарнитуре может пораниться, а людям с эпилепсией нужна крайняя осторожность из-за риска для здоровья.",
+                answer: "ШЛЕМ-ПРОСТОР-ПРИПАДКИ",
+                hint: "§ 11.17, стр. 208: устройство — ШЛЕМ, для безопасности нужен ПРОСТОР, риск при эпилепсии — ПРИПАДКИ."
+              }
+            ];
+            const s = pickOne(scenarios);
+            return {
+              type: "input",
+              badge: "Уровень 3 • Применение (§ 11.15–11.18, стр. 207–209)",
+              prompt:
+                'Соберите 3-сегментный экспертный код по данным карточки:' +
+                '<div class="mt-3 p-4 rounded-xl bg-slate-900 text-slate-100 font-mono-code text-xs md:text-sm font-normal leading-relaxed border border-slate-700">' +
+                  '<div class="text-rose-400 font-bold mb-1.5">' + s.cardTitle + '</div>' +
+                  '<div class="text-slate-200 mb-3">' + s.cardBody + '</div>' +
+                  '<div class="text-amber-300 text-xs space-y-1">' +
+                    '<div>1) Направление: ТЕЛЕВИЗОР / ЗРЕНИЕ / ШЛЕМ</div>' +
+                    '<div>2) Ключевой ресурс: КОНТЕНТ / ЛИНЗЫ / ПРОСТОР</div>' +
+                    '<div>3) Важный фактор: СЕТЬ / ЦВЕТА / ПРИПАДКИ</div>' +
+                  '</div>' +
+                '</div>',
+              helperAlphabet: "Только русские буквы через дефис! Формат: НАПРАВЛЕНИЕ-РЕСУРС-ФАКТОР (например: ЗРЕНИЕ-ЛИНЗЫ-ЦВЕТА)",
+              placeholder: "СЛОВО1-СЛОВО2-СЛОВО3",
+              expectedAnswer: s.answer,
+              hintRef: s.hint
+            };
+          }
+        ]
+      };
+
+      // Расширенный бонусный модуль: 8 разноплановых задач по всей главе 11 и контрольным вопросам (стр. 209)
+      const BONUS_MODULE = {
+        lastIdx: -1,
+        generators: [
+          // Бонус 1 • Контрольный вопрос 1 (стр. 209): Влияние 3D-печати на медицину (multi)
+          function () {
+            return {
+              type: "multi",
+              prompt: "Контрольный вопрос №1 (стр. 209): отметьте ВСЕ факты из главы 11 о влиянии 3D-печати на медицину:",
+              hintRef: "§ 11.02, стр. 198–199 и контрольный вопрос №1 (стр. 209): вспомните слепки костей, протезы, сосуды и искусственные органы.",
+              options: shuffle([
+                { label: "Создание слепков сломанных костей и индивидуальных протезов (рис. 11.01)", correct: true },
+                { label: "Печать искусственных кровеносных сосудов для замены повреждённых", correct: true },
+                { label: "Перспектива решить проблему долгого ожидания органов и совместимости с кровью", correct: true },
+                { label: "Измерение шагов и режима сна через Bluetooth-браслет", correct: false },
+                { label: "Защита банковских карт и паспортов с помощью лазера", correct: false }
+              ])
+            };
+          },
+
+          // Бонус 2 • Контрольный вопрос 2 (стр. 209): ИИ и беспилотные автомобили (matching)
+          function () {
+            const pool = [
+              {
+                left: "Автоматическая смена полосы и снижение скорости перед авто",
+                right: "Возможности автопилота Tesla (рис. 11.02)"
+              },
+              {
+                left: "Самостоятельные поездки для людей с ограниченными возможностями",
+                right: "Важная социальная польза беспилотников"
+              },
+              {
+                left: "Устранение человеческого фактора за рулём",
+                right: "Повышение безопасности дорожного движения"
+              },
+              {
+                left: "Авария по вине беспилотного автомобиля",
+                right: "Нерешённый спор: платит водитель или производитель"
+              },
+              {
+                left: "Ошибки в коде программы искусственного интеллекта",
+                right: "Сбой и неправильная работа системы"
+              }
+            ];
+            return {
+              type: "matching",
+              prompt: "Контрольный вопрос №2 (стр. 209): оцените плюсы и проблемы беспилотных автомобилей с ИИ:",
+              hintRef: "§ 11.04, стр. 201: сверьтесь со списками влияния и проблем искусственного интеллекта.",
+              pairs: pickMany(pool, 4),
+              choices: shuffle(pool.map(function (p) { return p.right; }))
+            };
+          },
+
+          // Бонус 3 • Контрольный вопрос 3 (стр. 209): Новые технологии и личный досуг (matching)
+          function () {
+            const pool = [
+              {
+                left: "Связь 4G и 5G (§ 11.03)",
+                right: "Потоковое HD-видео и быстрый отклик в мобильных играх"
+              },
+              {
+                left: "Карты дополненной реальности Nintendo 3DS (§ 11.05)",
+                right: "Появление 3D-модели персонажа прямо через камеру"
+              },
+              {
+                left: "Облачная обработка в Crackdown 3 (§ 11.07)",
+                right: "Зрелищное разрушение зданий без нагрузки на консоль"
+              },
+              {
+                left: "ИИ-противник в играх (§ 11.04)",
+                right: "Высокая зрелищность, так как врага сложнее победить"
+              },
+              {
+                left: "Гарнитуры Oculus Rift, HTC Vive, PlayStation VR (§ 11.17)",
+                right: "Погружение игрока внутрь 3D-пространства"
+              }
+            ];
+            return {
+              type: "matching",
+              prompt: "Контрольный вопрос №3 (стр. 209): сопоставьте технологии главы с тем, как они меняют наш личный досуг:",
+              hintRef: "§ 11.03, 11.04, 11.05, 11.07, 11.17: найдите в этих параграфах примеры игр, видео и развлечений.",
+              pairs: pickMany(pool, 4),
+              choices: shuffle(pool.map(function (p) { return p.right; }))
+            };
+          },
+
+          // Бонус 4 • Сводный кейс «Безопасность и приватность» (multi)
+          function () {
+            return {
+              type: "multi",
+              prompt: "Отметьте ВСЕ реальные угрозы безопасности и частной жизни, упомянутые в главе 11:",
+              hintRef: "§ 11.02, 11.05, 11.06, 11.07, 11.14: проверьте пункты о взломе, оружии и защите данных.",
+              options: shuffle([
+                { label: "Создание оружия на 3D-принтере и взлом баз биометрических данных", correct: true },
+                { label: "Кража личных данных и денег с карт при взломе облачного хранилища", correct: true },
+                { label: "Риск взлома Bluetooth-связи носимых гаджетов и данных Google Glass", correct: true },
+                { label: "Полная невозможность подделать отпечаток пальца или запись голоса", correct: false },
+                { label: "Использование квантовой криптографии только на основе математики без физики", correct: false }
+              ])
+            };
+          },
+
+          // Бонус 5 • Сводный кейс «Экология и новые технологии» (single)
+          function () {
+            return {
+              type: "single",
+              prompt: "Какие два решения экологических проблем от новых технологий называет учебник в главе 11?",
+              hintRef: "§ 11.01 (стр. 198), § 11.02 (стр. 199), § 11.17–11.18 (стр. 208–209): найдите упоминания о переработке и биопластиках.",
+              options: shuffle([
+                { label: "Переработка/утилизация старых приборов (иногда за вознаграждение) и биопластики для 3D-принтеров", correct: true },
+                { label: "Запрет сетей 5G и возврат к проводным телефонам 1G", correct: false },
+                { label: "Перевод всех документов в облако без синхронизации на компьютер", correct: false },
+                { label: "Замена всех экранов 4K на картонные очки Google Cardboard", correct: false }
+              ])
+            };
+          },
+
+          // Бонус 6 • Кросс-тема «Свет, камеры и оптика в главе 11» (matching)
+          function () {
+            const pool = [
+              {
+                left: "Голографическое изображение (§ 11.10)",
+                right: "Запись интерференции двух лазерных лучей на плёнке"
+              },
+              {
+                left: "Квантовая криптография (§ 11.11)",
+                right: "Поляризованные фотоны в оптоволоконном кабеле"
+              },
+              {
+                left: "Дополненная реальность (§ 11.05)",
+                right: "Камера находит точку и рисует перевод или 3D-объект"
+              },
+              {
+                left: "QR-код (§ 11.13)",
+                right: "Камера считывает чёрно-белые квадраты при хорошем свете"
+              },
+              {
+                left: "Улучшение зрения (§ 11.16)",
+                right: "Очки или линзы фильтруют сигнал, попадающий в глаз"
+              }
+            ];
+            return {
+              type: "matching",
+              prompt: "Сводная карта «Свет и оптика»: сопоставьте технологию из главы 11 с принципом её работы:",
+              hintRef: "§ 11.05, 11.10, 11.11, 11.13, 11.16: сравните роль лазера, фотонов, камеры и светофильтров.",
+              pairs: pickMany(pool, 4),
+              choices: shuffle(pool.map(function (p) { return p.right; }))
+            };
+          },
+
+          // Бонус 7 • Числовые константы главы 11 (input — только ЦИФРЫ и ДЕФИСЫ)
+          function () {
+            return {
+              type: "input",
+              prompt:
+                'Соберите 3-числовой код-рекорд по точным фактам из главы 11:' +
+                '<div class="mt-3 p-4 rounded-xl bg-slate-900 text-slate-100 font-mono-code text-xs md:text-sm font-normal leading-relaxed border border-slate-700">' +
+                  '<div class="text-indigo-400 font-bold mb-1.5">АРХИВ КОНСТАНТ • ГЛАВА 11</div>' +
+                  '<div class="text-amber-300 text-xs space-y-1.5">' +
+                    '<div>1) Сколько раз нужно сказать «Привет» для голосового образца (§ 11.06, стр. 202)</div>' +
+                    '<div>2) На каком расстоянии (в км) сейчас работает квантовая криптография (§ 11.11, стр. 205)</div>' +
+                    '<div>3) В каком году Деннис Габор изобрёл голограмму (§ 11.10, стр. 205)</div>' +
+                  '</div>' +
+                '</div>',
+              helperAlphabet: "Только цифры и дефисы! Формат: ЧИСЛО1-ЧИСЛО2-ГОД (например: 3-40-1960)",
+              placeholder: "ЧИСЛО1-ЧИСЛО2-ГОД",
+              expectedAnswer: "5-60-1947",
+              hintRef: "Стр. 202 («Привет» 5 раз), стр. 205 (дистанция 60 км для квантовой криптографии и 1947 год для Денниса Габора)."
+            };
+          },
+
+          // Бонус 8 • Сводный кейс «Медицина будущего» (single)
+          function () {
+            return {
+              type: "single",
+              prompt: "Какая связка «технологии → помощь медицине» ПОЛНОСТЬЮ соответствует тексту главы 11?",
+              hintRef: "§ 11.01 (стр. 198), § 11.03 (стр. 200), § 11.17 (стр. 208): проверьте тканевую инженерию, 5G и VR.",
+              options: shuffle([
+                { label: "Тканевая инженерия (органы из своих клеток), 5G (удалённые консультации врачей), VR (практика хирургов)", correct: true },
+                { label: "QR-коды (пересадка сосудов), 2G (печать протезов), ASIMO (лечение дальтонизма)", correct: false },
+                { label: "Квантовая криптография (выращивание органов), Google Translate (слепки костей), 8K (снятие стресса)", correct: false },
+                { label: "Технологичные футболки (замена донорства), Deep Blue (паспортный контроль), 3G (лазерные линзы)", correct: false }
+              ])
+            };
+          }
+        ],
+        generate: function (stageIndex, stageModule) {
+          let idx = Math.floor(Math.random() * this.generators.length);
+          if (this.generators.length > 1 && idx === this.lastIdx) {
+            idx = (idx + 1) % this.generators.length;
+          }
+          this.lastIdx = idx;
+          const task = this.generators[idx]();
+          task.badge = "⚡ БОНУС-ТРЕНАЖЁР • Задача " + (idx + 1) + " из 8 (+1 бонус)";
+          return task;
+        }
+      };
+
+      // === КОНЕЦ НЕЗАВИСИМЫХ МОДУЛЕЙ ЭТАПОВ ===
+
+      const STAGES_CONFIG = [
+        STAGE_01, STAGE_02, STAGE_03, STAGE_04, STAGE_05,
+        STAGE_06, STAGE_07, STAGE_08, STAGE_09, STAGE_10
+      ];
+
+      /***********************************************************************
+       * 2. РАСПИСАНИЕ И КОНФИГУРАЦИЯ ВРЕМЕНИ УРОКА
+       ***********************************************************************/
+      const SCHEDULE_SLOTS = [
+        { hour: 10, minute: 40, label: "10:40", mode: "60MIN", durationMin: 60, requiredLevels: 3 },
+        { hour: 11, minute: 30, label: "11:30", mode: "35MIN", durationMin: 35, requiredLevels: 2 },
+        { hour: 11, minute: 55, label: "11:55", mode: "60MIN", durationMin: 60, requiredLevels: 3 },
+        { hour: 12, minute: 20, label: "12:20", mode: "35MIN", durationMin: 35, requiredLevels: 2 }
+      ];
+
+      const MAX_PAUSE_SECONDS = 300; // 5 минут максимум на 1 паузу за урок
+      const READING_LOCK_STANDARD_SEC = 3; // Защита от прокликивания на обычных уровнях (3 с)
+      const READING_LOCK_BONUS_SEC = 5;    // Усиленная защита от прокликивания в бонус-режиме (5 с)
+
+      let currentLessonMode = "60MIN";
+      let TOTAL_LESSON_SEC = 3600;
+
+      function applyLessonModeTimings(mode) {
+        currentLessonMode = mode === "35MIN" ? "35MIN" : "60MIN";
+        let cumulative = 0;
+        for (let i = 0; i < STAGES_CONFIG.length; i++) {
+          const s = STAGES_CONFIG[i];
+          s.durationSec = currentLessonMode === "35MIN" ? s.duration35Sec : s.duration60Sec;
+          s.startOffsetSec = cumulative;
+          s.endOffsetSec = cumulative + s.durationSec;
+          cumulative += s.durationSec;
+        }
+        TOTAL_LESSON_SEC = cumulative;
+      }
+
+      function getRequiredLevelsForPass(mode) {
+        const m = mode || currentLessonMode;
+        return m === "35MIN" ? 2 : 3;
+      }
+
+      function isStagePassed(stageState, mode) {
+        return stageState.levelsCompleted >= getRequiredLevelsForPass(mode);
+      }
+
+      applyLessonModeTimings("60MIN");
+
+      /***********************************************************************
+       * 3. СОСТОЯНИЕ УЧЕНИКА (ПРОГРЕСС, ПАУЗА, ШТРАФЫ)
+       ***********************************************************************/
+      function createFreshState() {
+        return {
+          seed: Math.floor(Math.random() * 900000) + 100000,
+          bonusPoints: 0,
+          consecutiveErrors: 0,
+          pauseUsed: false,
+          isPaused: false,
+          pauseStartedAtMs: null,
+          totalPausedMs: 0,
+          stages: STAGES_CONFIG.map(function (s) {
+            return {
+              id: s.id,
+              levelsCompleted: 0,
+              passed: false,
+              bonusSolvedInStage: 0
+            };
+          })
+        };
+      }
+
+      function loadOrInitState() {
+        try {
+          const raw = sessionStorage.getItem(LESSON_META.StorageKey);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && Array.isArray(parsed.stages) && parsed.stages.length === 10) {
+              // Если страница перезагружена во время активной паузы, корректно учитываем прошедшее время паузы
+              if (parsed.isPaused && parsed.pauseStartedAtMs) {
+                const spentMs = Math.min(MAX_PAUSE_SECONDS * 1000, Math.max(0, Date.now() - parsed.pauseStartedAtMs));
+                if (spentMs >= MAX_PAUSE_SECONDS * 1000) {
+                  parsed.totalPausedMs = (parsed.totalPausedMs || 0) + MAX_PAUSE_SECONDS * 1000;
+                  parsed.isPaused = false;
+                  parsed.pauseStartedAtMs = null;
+                }
+              }
+              return parsed;
+            }
+          }
+        } catch (err) {}
+        return createFreshState();
+      }
+
+      let appState = loadOrInitState();
+
+      function saveState() {
+        try {
+          sessionStorage.setItem(LESSON_META.StorageKey, JSON.stringify(appState));
+        } catch (err) {}
+      }
+
+      /***********************************************************************
+       * 4. УПРАВЛЕНИЕ РАСПИСАНИЕМ (ВСЕГДА СТАРТ С ЭКРАНА ОЖИДАНИЯ) И ПАУЗОЙ
+       ***********************************************************************/
+      let timeMode = "AUTO"; // "AUTO", "FORCE_LESSON", "FORCE_WAITING", "FORCE_FINAL"
+      let forcedStartTimestampMs = null;
+
+      // При запуске приложения мы фиксируем ТОЛЬКО будущий ближайший слот,
+      // чтобы никогда не открывать задания уже начавшихся в прошлом уроков.
+      let scheduledTargetSlot = null;
+      let lockedAutoSlot = null;
+
+      let activeStageIndex = -1;
+      let currentTaskData = null;
+      let selectedSingleIndex = null;
+      let selectedMultiIndices = {};
+
+      // Таймеры защиты от прокликивания и штрафов
+      let cooldownTimerId = null;
+      let cooldownRemainingSec = 0;
+      let readingLockTimerId = null;
+      let readingLockRemainingSec = 0;
+      let isEvaluatingAnswer = false;
+      let lastErrorHintText = "";
+
+      function findNearestUpcomingSlot(now) {
+        let nearestSlot = null;
+        let nearestDiffSec = null;
+
+        for (let i = 0; i < SCHEDULE_SLOTS.length; i++) {
+          const slot = SCHEDULE_SLOTS[i];
+          const candidate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), slot.hour, slot.minute, 0, 0);
+          const diffSec = Math.floor((candidate.getTime() - now.getTime()) / 1000);
+          if (diffSec > 0 && (nearestDiffSec === null || diffSec < nearestDiffSec)) {
+            nearestDiffSec = diffSec;
+            nearestSlot = {
+              hour: slot.hour,
+              minute: slot.minute,
+              label: slot.label,
+              mode: slot.mode,
+              durationMin: slot.durationMin,
+              requiredLevels: slot.requiredLevels,
+              targetTimestampMs: candidate.getTime(),
+              isTomorrow: false
+            };
+          }
+        }
+
+        if (!nearestSlot) {
+          const first = SCHEDULE_SLOTS[0];
+          const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, first.hour, first.minute, 0, 0);
+          nearestDiffSec = Math.floor((tomorrow.getTime() - now.getTime()) / 1000);
+          nearestSlot = {
+            hour: first.hour,
+            minute: first.minute,
+            label: first.label,
+            mode: first.mode,
+            durationMin: first.durationMin,
+            requiredLevels: first.requiredLevels,
+            targetTimestampMs: tomorrow.getTime(),
+            isTomorrow: true
+          };
+        }
+
+        return { slot: nearestSlot, secondsUntilStart: nearestDiffSec };
+      }
+
+      // Инициализируем целевой будущий слот при открытии страницы:
+      // приложение всегда открывается в режиме ожидания ближайшего будущего урока.
+      function lockNextUpcomingSlotOnStartup() {
+        const up = findNearestUpcomingSlot(new Date());
+        scheduledTargetSlot = up.slot;
+        lockedAutoSlot = null;
+      }
+
+      lockNextUpcomingSlotOnStartup();
+
+      // Подсчёт суммарного времени, проведённого на паузе (в миллисекундах)
+      function getEffectivePausedMs(nowMs) {
+        let total = appState.totalPausedMs || 0;
+        if (appState.isPaused && appState.pauseStartedAtMs) {
+          const currentPauseElapsed = Math.max(0, nowMs - appState.pauseStartedAtMs);
+          total += Math.min(MAX_PAUSE_SECONDS * 1000, currentPauseElapsed);
+        }
+        return total;
+      }
+
+      function startStudentPause() {
+        if (appState.pauseUsed || appState.isPaused) return;
+        appState.pauseUsed = true;
+        appState.isPaused = true;
+        appState.pauseStartedAtMs = Date.now();
+        saveState();
+        tickMainLoop();
+      }
+
+      function resumeFromStudentPause() {
+        if (!appState.isPaused) return;
+        const nowMs = Date.now();
+        const spentMs = Math.min(
+          MAX_PAUSE_SECONDS * 1000,
+          Math.max(0, nowMs - (appState.pauseStartedAtMs || nowMs))
+        );
+        appState.totalPausedMs = (appState.totalPausedMs || 0) + spentMs;
+        appState.isPaused = false;
+        appState.pauseStartedAtMs = null;
+        saveState();
+        tickMainLoop();
+      }
+
+      function computeLessonStatus() {
+        const now = new Date();
+        const nowMs = now.getTime();
+
+        // Проверяем, не истекли ли 5 минут паузы
+        if (appState.isPaused && appState.pauseStartedAtMs) {
+          const pauseElapsedSec = Math.floor((nowMs - appState.pauseStartedAtMs) / 1000);
+          if (pauseElapsedSec >= MAX_PAUSE_SECONDS) {
+            resumeFromStudentPause();
+          }
+        }
+
+        if (timeMode === "FORCE_WAITING") {
+          const up = findNearestUpcomingSlot(now);
+          return { state: "WAITING", nextSlot: up.slot, secondsUntilStart: up.secondsUntilStart, now: now };
+        }
+
+        if (timeMode === "FORCE_FINAL") {
+          return { state: "FINISHED", now: now };
+        }
+
+        const pausedMs = getEffectivePausedMs(nowMs);
+
+        if (timeMode === "FORCE_LESSON" && forcedStartTimestampMs !== null) {
+          const elapsedSec = Math.floor((nowMs - forcedStartTimestampMs - pausedMs) / 1000);
+          if (elapsedSec >= TOTAL_LESSON_SEC) {
+            return { state: "FINISHED", now: now };
+          }
+          return {
+            state: "ACTIVE",
+            elapsedSec: Math.max(0, elapsedSec),
+            now: now
+          };
+        }
+
+        // Режим AUTO: проверяем, наступило ли время запланированного при старте слота
+        if (!lockedAutoSlot && scheduledTargetSlot && nowMs >= scheduledTargetSlot.targetTimestampMs) {
+          lockedAutoSlot = {
+            label: scheduledTargetSlot.label,
+            mode: scheduledTargetSlot.mode,
+            durationMin: scheduledTargetSlot.durationMin,
+            startMs: scheduledTargetSlot.targetTimestampMs
+          };
+          applyLessonModeTimings(lockedAutoSlot.mode);
+        }
+
+        if (lockedAutoSlot) {
+          applyLessonModeTimings(lockedAutoSlot.mode);
+          const elapsedSec = Math.floor((nowMs - lockedAutoSlot.startMs - pausedMs) / 1000);
+          if (elapsedSec >= 0 && elapsedSec < TOTAL_LESSON_SEC) {
+            return { state: "ACTIVE", elapsedSec: elapsedSec, now: now };
+          } else if (elapsedSec >= TOTAL_LESSON_SEC) {
+            return { state: "FINISHED", now: now };
+          }
+        }
+
+        // До наступления целевого слота всегда показываем экран ожидания
+        if (!scheduledTargetSlot || scheduledTargetSlot.targetTimestampMs <= nowMs) {
+          scheduledTargetSlot = findNearestUpcomingSlot(now).slot;
+        }
+        const secondsUntil = Math.max(0, Math.floor((scheduledTargetSlot.targetTimestampMs - nowMs) / 1000));
+
+        return {
+          state: "WAITING",
+          nextSlot: scheduledTargetSlot,
+          secondsUntilStart: secondsUntil,
+          now: now
+        };
+      }
+
+      function formatHMS(totalSeconds) {
+        const sec = Math.max(0, Math.floor(totalSeconds));
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = sec % 60;
+        return [h, m, s].map(function (v) { return String(v).padStart(2, "0"); }).join(":");
+      }
+
+      function formatMS(totalSeconds) {
+        const sec = Math.max(0, Math.floor(totalSeconds));
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        return [m, s].map(function (v) { return String(v).padStart(2, "0"); }).join(":");
+      }
+
+      /***********************************************************************
+       * 5. ЗАГРУЗКА ЗАДАНИЙ, ЗАЩИТА ОТ ПРОКЛИКИВАНИЯ И ОТРИСОВКА РАБОЧЕЙ ЗОНЫ
+       ***********************************************************************/
+      function clearTaskTimers() {
+        if (cooldownTimerId) {
+          clearInterval(cooldownTimerId);
+          cooldownTimerId = null;
+        }
+        cooldownRemainingSec = 0;
+
+        if (readingLockTimerId) {
+          clearInterval(readingLockTimerId);
+          readingLockTimerId = null;
+        }
+        readingLockRemainingSec = 0;
+        isEvaluatingAnswer = false;
+      }
+
+      function startReadingLock(seconds) {
+        if (readingLockTimerId) {
+          clearInterval(readingLockTimerId);
+        }
+        readingLockRemainingSec = seconds;
+        updateSubmitButtonLockState();
+
+        readingLockTimerId = setInterval(function () {
+          // Если урок поставлен на паузу, таймер чтения тоже ждёт
+          if (appState.isPaused) return;
+
+          readingLockRemainingSec -= 1;
+          if (readingLockRemainingSec <= 0) {
+            readingLockRemainingSec = 0;
+            clearInterval(readingLockTimerId);
+            readingLockTimerId = null;
+          }
+          updateSubmitButtonLockState();
+        }, 1000);
+      }
+
+      function updateSubmitButtonLockState() {
+        const submitBtn = document.getElementById("submitTaskBtn");
+        if (!submitBtn) return;
+
+        if (readingLockRemainingSec > 0) {
+          submitBtn.disabled = true;
+          submitBtn.className = "px-6 py-3 rounded-xl bg-slate-300 text-slate-600 font-extrabold text-sm cursor-not-allowed transition";
+          submitBtn.textContent = "⏳ Внимательно прочитайте задание (" + readingLockRemainingSec + " с)...";
+        } else {
+          submitBtn.disabled = false;
+          submitBtn.className = "px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm shadow-sm transition cursor-pointer";
+          submitBtn.textContent = "Проверить ответ →";
+        }
+      }
+
+      function loadCurrentStageTask() {
+        clearTaskTimers();
+        selectedSingleIndex = null;
+        selectedMultiIndices = {};
+
+        if (activeStageIndex < 0 || activeStageIndex >= STAGES_CONFIG.length) return;
+        const stageModule = STAGES_CONFIG[activeStageIndex];
+        const stState = appState.stages[activeStageIndex];
+
+        const isBonus = stState.levelsCompleted >= 3;
+        if (!isBonus) {
+          const levelGenerator = stageModule.levels[stState.levelsCompleted];
+          currentTaskData = levelGenerator();
+        } else {
+          currentTaskData = BONUS_MODULE.generate(activeStageIndex, stageModule);
+        }
+
+        renderWorkspace();
+        startReadingLock(isBonus ? READING_LOCK_BONUS_SEC : READING_LOCK_STANDARD_SEC);
+      }
+
+      function updateHeaderAndStepper(stageIdx, stageRemainingSec) {
+        const stageCfg = STAGES_CONFIG[stageIdx];
+        const stState = appState.stages[stageIdx];
+        const reqLevels = getRequiredLevelsForPass();
+        const passed = isStagePassed(stState);
+        stState.passed = passed;
+
+        document.getElementById("headerStageBadge").textContent = "Этап " + stageCfg.id + " из 10";
+        document.getElementById("headerStageTitle").textContent = stageCfg.title;
+        document.getElementById("headerStageRef").textContent =
+          stageCfg.ref + " • Версия " + (currentLessonMode === "60MIN" ? "60 мин" : "35 мин");
+
+        const subtitleEl = document.getElementById("headerStageSubtitle");
+        if (reqLevels === 3) {
+          subtitleEl.textContent = "Версия 60 мин: 1. Знание → 2. Понимание → 3. Применение (ЗАЧЁТ +1 балл)";
+        } else {
+          subtitleEl.textContent = "Версия 35 мин: 1. Знание → 2. Понимание (ЗАЧЁТ +1 балл) → 3. Применение";
+        }
+
+        // Кружки 1..10
+        const dotsContainer = document.getElementById("stageDotsContainer");
+        dotsContainer.innerHTML = STAGES_CONFIG.map(function (s, idx) {
+          const st = appState.stages[idx];
+          const ok = isStagePassed(st);
+          let cls = "bg-slate-200 text-slate-600 border-slate-300";
+          if (ok && idx === stageIdx) {
+            cls = "bg-emerald-600 text-white border-emerald-700 ring-2 ring-blue-400";
+          } else if (ok) {
+            cls = "bg-emerald-500 text-white border-emerald-600";
+          } else if (idx === stageIdx) {
+            cls = "bg-blue-600 text-white border-blue-700 ring-2 ring-blue-200";
+          } else if (idx < stageIdx) {
+            cls = "bg-rose-100 text-rose-700 border-rose-300";
+          }
+          return '<div class="w-6 h-6 rounded-full border text-[11px] font-extrabold flex items-center justify-center ' + cls + '" title="Этап ' + s.id + ': ' + s.title + '">' + s.id + '</div>';
+        }).join("");
+
+        // Счётчик основных и бонусных баллов
+        const totalEarned = appState.stages.filter(function (s) { return isStagePassed(s); }).length;
+        document.getElementById("headerTotalScore").textContent = totalEarned + " / 10";
+        document.getElementById("headerBonusScore").textContent = "+" + appState.bonusPoints;
+
+        // Флаг усвоения этапа
+        const flagBox = document.getElementById("headerMasteryFlag");
+        const flagIcon = document.getElementById("headerMasteryIcon");
+        const flagText = document.getElementById("headerMasteryText");
+
+        if (passed) {
+          flagBox.className = "px-3.5 py-2 rounded-xl border-2 text-xs font-extrabold tracking-wide uppercase flex items-center gap-2 bg-emerald-100 border-emerald-600 text-emerald-800 shadow-sm";
+          flagIcon.className = "w-2.5 h-2.5 rounded-full bg-emerald-600";
+          flagText.textContent = "УСВОЕНИЕ: ДОСТАТОЧНО (+1 БАЛЛ)";
+        } else {
+          flagBox.className = "px-3.5 py-2 rounded-xl border text-xs font-extrabold tracking-wide uppercase flex items-center gap-2 bg-rose-50 border-rose-300 text-rose-800";
+          flagIcon.className = "w-2.5 h-2.5 rounded-full bg-rose-500";
+          flagText.textContent = "УСВОЕНИЕ: НЕДОСТАТОЧНО (0 БАЛЛОВ • ШАГОВ: " + stState.levelsCompleted + " ИЗ " + reqLevels + ")";
+        }
+
+        // Кнопка однократной паузы
+        const pauseBtn = document.getElementById("btnStudentPause");
+        if (pauseBtn) {
+          if (appState.pauseUsed) {
+            pauseBtn.disabled = true;
+            pauseBtn.className = "px-3.5 py-2 rounded-xl border border-slate-200 bg-slate-100 text-slate-400 text-xs font-bold cursor-not-allowed flex items-center gap-1.5";
+            pauseBtn.innerHTML = "<span>⏸ Пауза использована</span>";
+          } else {
+            pauseBtn.disabled = false;
+            pauseBtn.className = "px-3.5 py-2 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-extrabold transition cursor-pointer flex items-center gap-1.5";
+            pauseBtn.innerHTML = "<span>⏸ Пауза (1 раз • до 5 мин)</span>";
+          }
+        }
+
+        // Таймер этапа
+        const timerBox = document.getElementById("headerTimerBox");
+        const timerText = document.getElementById("headerStageTimer");
+        timerText.textContent = formatMS(stageRemainingSec);
+
+        timerBox.classList.remove("timer-warn", "timer-danger");
+        if (stageRemainingSec <= 15) {
+          timerBox.classList.add("timer-danger");
+        } else if (stageRemainingSec <= 30) {
+          timerBox.classList.add("timer-warn");
+        }
+
+        // Степпер уровней внутри этапа
+        const stepper = document.getElementById("levelStepper");
+        const stepsMeta = [
+          { idx: 0, label: "1. Знание", sub: "Базовые определения" },
+          {
+            idx: 1,
+            label: "2. Понимание",
+            sub: reqLevels === 2 ? "🎯 Даёт ЗАЧЁТ этапа (+1 балл)" : "Анализ связей и примеров"
+          },
+          {
+            idx: 2,
+            label: "3. Применение",
+            sub: reqLevels === 3 ? "🎯 Даёт ЗАЧЁТ этапа (+1 балл)" : "Практический кейс"
+          },
+          { idx: 3, label: "⚡ Бонус-тренажёр", sub: "Задания с защитой от кликов" }
+        ];
+
+        stepper.innerHTML = stepsMeta.map(function (m) {
+          const done = stState.levelsCompleted > m.idx;
+          const active = stState.levelsCompleted === m.idx;
+          let boxCls = "border-slate-200 bg-slate-100 text-slate-400";
+          let badge = "🔒";
+
+          if (done) {
+            boxCls = "border-emerald-300 bg-emerald-50 text-emerald-900";
+            badge = "✅";
+          } else if (active) {
+            boxCls = m.idx === 3
+              ? "border-indigo-400 bg-indigo-50 text-indigo-950 ring-2 ring-indigo-100"
+              : "border-blue-500 bg-blue-50 text-slate-900 ring-2 ring-blue-100";
+            badge = m.idx === 3 ? "⚡" : "▶";
+          }
+
+          return (
+            '<div class="rounded-xl border px-3.5 py-2.5 flex items-center justify-between ' + boxCls + '">' +
+              '<div>' +
+                '<div class="text-xs font-extrabold">' + m.label + '</div>' +
+                '<div class="text-[11px] opacity-85">' + m.sub + '</div>' +
+              '</div>' +
+              '<span class="text-base font-bold">' + badge + '</span>' +
+            '</div>'
+          );
+        }).join("");
+      }
+
+      function renderWorkspace() {
+        const workspace = document.getElementById("taskWorkspace");
+        if (!workspace || !currentTaskData || activeStageIndex < 0) return;
+
+        const stState = appState.stages[activeStageIndex];
+        const reqLevels = getRequiredLevelsForPass();
+        const isBonusMode = stState.levelsCompleted >= 3;
+
+        // Если активна штрафная пауза после ошибки
+        if (cooldownRemainingSec > 0) {
+          workspace.innerHTML =
+            '<div class="my-auto py-8 text-center max-w-2xl mx-auto">' +
+              '<div class="w-14 h-14 rounded-2xl bg-rose-100 border border-rose-300 text-rose-700 flex items-center justify-center text-2xl font-black mx-auto mb-4">!</div>' +
+              '<h3 class="text-xl font-black text-slate-900 mb-2">Ответ неверный — сверьтесь с учебником</h3>' +
+              '<p class="text-sm text-slate-600 mb-5">' +
+                'Защита от угадывания: при повторных ошибках время паузы увеличивается (сейчас ошибок подряд: <b>' + appState.consecutiveErrors + '</b>), а вариант задания заменяется.' +
+              '</p>' +
+              '<div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 text-left text-sm text-amber-950 mb-6">' +
+                '<div class="font-extrabold uppercase text-xs text-amber-800 mb-1">📖 Подсказка по учебнику:</div>' +
+                '<div>' + lastErrorHintText + '</div>' +
+              '</div>' +
+              '<div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 text-white font-mono-code text-sm font-bold">' +
+                '<span>Новое задание откроется через:</span>' +
+                '<span id="cooldownSecSpan" class="text-amber-400 text-lg">' + cooldownRemainingSec + ' с</span>' +
+              '</div>' +
+            '</div>';
+          return;
+        }
+
+        let statusBanner = "";
+        if (isBonusMode) {
+          statusBanner =
+            '<div class="mb-4 px-4 py-2.5 rounded-xl bg-indigo-50 border border-indigo-200 flex flex-wrap items-center justify-between gap-2 text-xs text-indigo-950">' +
+              '<span class="font-extrabold">✅ Все 3 основных уровня этапа пройдены! Вы работаете в режиме бонус-тренажёра (включена 5-секундная защита от прокликивания).</span>' +
+              '<span class="font-mono-code font-bold bg-indigo-600 text-white px-2.5 py-0.5 rounded-lg">Решено бонусов на этапе: +' + stState.bonusSolvedInStage + '</span>' +
+            '</div>';
+        } else {
+          const isTargetStepNow = (stState.levelsCompleted + 1) === reqLevels;
+          if (isTargetStepNow) {
+            statusBanner =
+              '<div class="mb-4 px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800">' +
+                '🎯 Успешное выполнение этого задания (' + reqLevels + '-й уровень из 3) переключит флаг этапа на ДОСТАТОЧНО (+1 балл)!' +
+              '</div>';
+          }
+        }
+
+        let bodyHtml = "";
+
+        if (currentTaskData.type === "single") {
+          bodyHtml =
+            '<div class="flex flex-col gap-2.5 my-4" id="optionsListContainer">' +
+              currentTaskData.options.map(function (opt, idx) {
+                const isSel = selectedSingleIndex === idx;
+                return (
+                  '<button type="button" data-single-idx="' + idx + '" class="option-card ' + (isSel ? "selected" : "") + '">' +
+                    '<span class="option-indicator">✓</span>' +
+                    '<span class="font-medium">' + opt.label + '</span>' +
+                  '</button>'
+                );
+              }).join("") +
+            '</div>';
+        } else if (currentTaskData.type === "multi") {
+          bodyHtml =
+            '<div class="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5 inline-block mb-2">' +
+              'Отметьте все подходящие варианты (несколько ответов) и нажмите «Проверить ответ»' +
+            '</div>' +
+            '<div class="flex flex-col gap-2.5 my-3" id="optionsListContainer">' +
+              currentTaskData.options.map(function (opt, idx) {
+                const isSel = !!selectedMultiIndices[idx];
+                return (
+                  '<button type="button" data-multi-idx="' + idx + '" class="option-card ' + (isSel ? "selected" : "") + '">' +
+                    '<span class="option-indicator">✓</span>' +
+                    '<span class="font-medium">' + opt.label + '</span>' +
+                  '</button>'
+                );
+              }).join("") +
+            '</div>';
+        } else if (currentTaskData.type === "matching") {
+          bodyHtml =
+            '<div class="flex flex-col gap-3 my-4" id="matchingListContainer">' +
+              currentTaskData.pairs.map(function (pair, pIdx) {
+                const optionsHtml =
+                  '<option value="">— Выберите соответствие —</option>' +
+                  currentTaskData.choices.map(function (ch) {
+                    return '<option value="' + ch.replace(/"/g, "&quot;") + '">' + ch + '</option>';
+                  }).join("");
+                return (
+                  '<div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">' +
+                    '<div class="md:col-span-7 text-sm font-semibold text-slate-800">' + pair.left + '</div>' +
+                    '<div class="md:col-span-5">' +
+                      '<select data-pair-idx="' + pIdx + '" class="pair-select">' + optionsHtml + '</select>' +
+                    '</div>' +
+                  '</div>'
+                );
+              }).join("") +
+            '</div>';
+        } else if (currentTaskData.type === "input") {
+          bodyHtml =
+            '<div class="my-4 max-w-xl">' +
+              (currentTaskData.helperAlphabet
+                ? '<div class="font-mono-code text-xs bg-slate-100 border border-slate-300 rounded-xl p-3 mb-3 text-slate-700 font-bold tracking-wider">' + currentTaskData.helperAlphabet + '</div>'
+                : "") +
+              '<input type="text" id="taskTextInput" class="code-input font-mono-code uppercase" autocomplete="off" placeholder="' + (currentTaskData.placeholder || "Введите ответ...") + '" />' +
+            '</div>';
+        }
+
+        workspace.innerHTML =
+          '<div>' +
+            statusBanner +
+            '<div class="flex items-center justify-between gap-2 mb-2">' +
+              '<span class="text-xs font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 border border-slate-200">' +
+                currentTaskData.badge +
+              '</span>' +
+            '</div>' +
+            '<h3 class="text-lg md:text-xl font-extrabold text-slate-900 leading-snug mb-2">' +
+              currentTaskData.prompt +
+            '</h3>' +
+            bodyHtml +
+          '</div>' +
+          '<div class="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 mt-4">' +
+            '<div id="validationWarning" class="text-xs font-bold text-rose-600"></div>' +
+            '<button type="button" id="submitTaskBtn" class="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm shadow-sm transition cursor-pointer">' +
+              'Проверить ответ →' +
+            '</button>' +
+          '</div>';
+
+        updateSubmitButtonLockState();
+        attachWorkspaceEvents();
+      }
+
+      function attachWorkspaceEvents() {
+        const workspace = document.getElementById("taskWorkspace");
+        if (!workspace || !currentTaskData) return;
+
+        // Одиночный выбор (переключаем классы без полной перерисовки DOM, чтобы не сбивать фокус)
+        const singleBtns = workspace.querySelectorAll("button[data-single-idx]");
+        for (let i = 0; i < singleBtns.length; i++) {
+          singleBtns[i].addEventListener("click", function () {
+            const idx = parseInt(this.getAttribute("data-single-idx"), 10);
+            selectedSingleIndex = idx;
+            for (let j = 0; j < singleBtns.length; j++) {
+              singleBtns[j].classList.toggle("selected", j === idx);
+            }
+          });
+        }
+
+        // Множественный выбор
+        const multiBtns = workspace.querySelectorAll("button[data-multi-idx]");
+        for (let i = 0; i < multiBtns.length; i++) {
+          multiBtns[i].addEventListener("click", function () {
+            const idx = parseInt(this.getAttribute("data-multi-idx"), 10);
+            selectedMultiIndices[idx] = !selectedMultiIndices[idx];
+            this.classList.toggle("selected", !!selectedMultiIndices[idx]);
+          });
+        }
+
+        // Поле ввода по Enter
+        const textInput = document.getElementById("taskTextInput");
+        if (textInput) {
+          textInput.focus();
+          textInput.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              evaluateCurrentAnswer();
+            }
+          });
+        }
+
+        const submitBtn = document.getElementById("submitTaskBtn");
+        if (submitBtn) {
+          submitBtn.addEventListener("click", evaluateCurrentAnswer);
+        }
+      }
+
+      function evaluateCurrentAnswer() {
+        if (!currentTaskData || activeStageIndex < 0) return;
+        if (readingLockRemainingSec > 0 || cooldownRemainingSec > 0 || isEvaluatingAnswer || appState.isPaused) {
+          return;
+        }
+
+        const warnEl = document.getElementById("validationWarning");
+        let isCorrect = false;
+
+        if (currentTaskData.type === "single") {
+          if (selectedSingleIndex === null) {
+            if (warnEl) warnEl.textContent = "Пожалуйста, выберите один из вариантов ответа.";
+            return;
+          }
+          isCorrect = !!currentTaskData.options[selectedSingleIndex].correct;
+        } else if (currentTaskData.type === "multi") {
+          const anyChosen = Object.keys(selectedMultiIndices).some(function (k) { return selectedMultiIndices[k]; });
+          if (!anyChosen) {
+            if (warnEl) warnEl.textContent = "Отметьте хотя бы один вариант.";
+            return;
+          }
+          isCorrect = currentTaskData.options.every(function (opt, idx) {
+            const chosen = !!selectedMultiIndices[idx];
+            return chosen === !!opt.correct;
+          });
+        } else if (currentTaskData.type === "matching") {
+          const selects = document.querySelectorAll("#matchingListContainer select[data-pair-idx]");
+          for (let i = 0; i < selects.length; i++) {
+            if (!selects[i].value) {
+              if (warnEl) warnEl.textContent = "Выберите значения во всех выпадающих списках.";
+              return;
+            }
+          }
+          isCorrect = true;
+          for (let i = 0; i < selects.length; i++) {
+            const pIdx = parseInt(selects[i].getAttribute("data-pair-idx"), 10);
+            if (selects[i].value !== currentTaskData.pairs[pIdx].right) {
+              isCorrect = false;
+              break;
+            }
+          }
+        } else if (currentTaskData.type === "input") {
+          const inp = document.getElementById("taskTextInput");
+          const val = inp ? inp.value.trim().toUpperCase() : "";
+          if (!val) {
+            if (warnEl) warnEl.textContent = "Введите ответ в текстовое поле.";
+            return;
+          }
+          isCorrect = val === String(currentTaskData.expectedAnswer).trim().toUpperCase();
+        }
+
+        isEvaluatingAnswer = true;
+
+        if (isCorrect) {
+          appState.consecutiveErrors = 0;
+          const stState = appState.stages[activeStageIndex];
+          if (stState.levelsCompleted < 3) {
+            stState.levelsCompleted += 1;
+          } else {
+            stState.bonusSolvedInStage += 1;
+            appState.bonusPoints += 1;
+          }
+          stState.passed = isStagePassed(stState);
+          saveState();
+          loadCurrentStageTask();
+        } else {
+          // Прогрессивный штраф за ошибки подряд (5 с -> 10 с -> 15 с)
+          appState.consecutiveErrors = (appState.consecutiveErrors || 0) + 1;
+          saveState();
+
+          const penaltySec = Math.min(15, 5 * appState.consecutiveErrors);
+          lastErrorHintText = currentTaskData.hintRef || "Проверьте определения в соответствующем параграфе учебника.";
+          cooldownRemainingSec = penaltySec;
+          renderWorkspace();
+
+          cooldownTimerId = setInterval(function () {
+            if (appState.isPaused) return;
+            cooldownRemainingSec -= 1;
+            const span = document.getElementById("cooldownSecSpan");
+            if (span && cooldownRemainingSec > 0) {
+              span.textContent = cooldownRemainingSec + " с";
+            }
+            if (cooldownRemainingSec <= 0) {
+              clearTaskTimers();
+              loadCurrentStageTask();
+            }
+          }, 1000);
+        }
+      }
+
+      function renderFinalScreen() {
+        const totalScore = appState.stages.filter(function (s) { return isStagePassed(s); }).length;
+        const totalLevels = appState.stages.reduce(function (acc, s) { return acc + s.levelsCompleted; }, 0);
+        const reqLevels = getRequiredLevelsForPass();
+
+        const finalScreenEl = document.getElementById("finalScreen");
+        const card = document.getElementById("finalCard");
+        const badge = document.getElementById("finalStatusBadge");
+        const giantScore = document.getElementById("finalGiantScore");
+
+        badge.textContent =
+          "УРОК ЗАВЕРШЁН (" +
+          (currentLessonMode === "60MIN"
+            ? "ВЕРСИЯ 60 МИН • ЗАЧЁТ ЗА 3 УРОВНЯ"
+            : "ВЕРСИЯ 35 МИН • ЗАЧЁТ ЗА 2 УРОВНЯ") +
+          ")";
+        giantScore.textContent = totalScore + " / 10";
+        document.getElementById("finalLevelsCount").textContent = totalLevels + " / 30";
+        document.getElementById("finalBonusCount").textContent = "+" + appState.bonusPoints;
+
+        if (totalScore >= 8) {
+          finalScreenEl.className = "flex-1 flex flex-col items-center justify-center p-6 min-h-screen bg-emerald-100";
+          card.className = "max-w-5xl w-full rounded-3xl border-4 border-emerald-500 p-8 md:p-12 text-center shadow-xl bg-white";
+          badge.className = "inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-widest mb-2 bg-emerald-100 text-emerald-800 border border-emerald-300";
+          giantScore.className = "giant-score font-mono-code font-black my-4 text-emerald-600";
+        } else if (totalScore >= 5) {
+          finalScreenEl.className = "flex-1 flex flex-col items-center justify-center p-6 min-h-screen bg-amber-100";
+          card.className = "max-w-5xl w-full rounded-3xl border-4 border-amber-500 p-8 md:p-12 text-center shadow-xl bg-white";
+          badge.className = "inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-widest mb-2 bg-amber-100 text-amber-900 border border-amber-300";
+          giantScore.className = "giant-score font-mono-code font-black my-4 text-amber-600";
+        } else {
+          finalScreenEl.className = "flex-1 flex flex-col items-center justify-center p-6 min-h-screen bg-rose-100";
+          card.className = "max-w-5xl w-full rounded-3xl border-4 border-rose-500 p-8 md:p-12 text-center shadow-xl bg-white";
+          badge.className = "inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-widest mb-2 bg-rose-100 text-rose-900 border border-rose-300";
+          giantScore.className = "giant-score font-mono-code font-black my-4 text-rose-600";
+        }
+
+        const breakdownEl = document.getElementById("finalStageBreakdown");
+        breakdownEl.innerHTML = STAGES_CONFIG.map(function (cfg, idx) {
+          const st = appState.stages[idx];
+          const ok = isStagePassed(st);
+          return (
+            '<div class="p-3 rounded-xl border ' + (ok ? "bg-emerald-50 border-emerald-300 text-emerald-950" : "bg-slate-50 border-slate-200 text-slate-500") + '">' +
+              '<div class="flex items-center justify-between text-xs font-extrabold mb-0.5">' +
+                '<span>Этап ' + cfg.id + '</span>' +
+                '<span class="font-mono-code px-1.5 py-0.5 rounded ' + (ok ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-700") + '">' + (ok ? "+1 балл" : "0") + '</span>' +
+              '</div>' +
+              '<div class="text-[11px] font-bold truncate">' + cfg.shortName + '</div>' +
+              '<div class="text-[10px] opacity-80 mt-0.5">Шагов: ' + st.levelsCompleted + '/3 (нужно ' + reqLevels + ')' + (st.bonusSolvedInStage > 0 ? " • Бонус +" + st.bonusSolvedInStage : "") + '</div>' +
+            '</div>'
+          );
+        }).join("");
+      }
+
+      /***********************************************************************
+       * 6. ГЛАВНЫЙ ЦИКЛ СИНХРОНИЗАЦИИ И ИНИЦИАЛИЗАЦИЯ
+       ***********************************************************************/
+      function applyStaticMetaLabels() {
+        document.title = LESSON_META.chapterTitle;
+        document.getElementById("courseMetaBadge").textContent = LESSON_META.courseBadge;
+        document.getElementById("waitingChapterTitle").textContent = LESSON_META.chapterTitle;
+        document.getElementById("waitingChapterSubtitle").innerHTML = LESSON_META.chapterSubtitle;
+        document.getElementById("finalChapterTitle").textContent = LESSON_META.chapterTitle;
+      }
+
+      function tickMainLoop() {
+        const waitingScreenEl = document.getElementById("waitingScreen");
+        const lessonScreenEl = document.getElementById("lessonScreen");
+        const finalScreenEl = document.getElementById("finalScreen");
+        const pauseOverlayEl = document.getElementById("pauseOverlay");
+
+        const status = computeLessonStatus();
+        const nowTimeStr = status.now.toLocaleTimeString("ru-RU", { hour12: false });
+
+        if (status.state === "WAITING") {
+          waitingScreenEl.classList.remove("hidden");
+          lessonScreenEl.classList.add("hidden");
+          finalScreenEl.classList.add("hidden");
+          pauseOverlayEl.classList.add("hidden");
+
+          const ns = status.nextSlot;
+          document.getElementById("systemClockDisplay").textContent = nowTimeStr;
+          document.getElementById("waitingCountdown").textContent = formatHMS(status.secondsUntilStart);
+          document.getElementById("waitingTargetSlotLabel").textContent =
+            "ДО БЛИЖАЙШЕГО АВТОМАТИЧЕСКОГО СТАРТА УРОКА В " + ns.label + " ОСТАЛОСЬ:";
+          document.getElementById("waitingNearestStartInfo").textContent =
+            ns.label + " (версия " + ns.durationMin + " минут" + (ns.isTomorrow ? ", завтра" : "") + ")";
+          document.getElementById("waitingBadgeModeText").textContent =
+            "БЛИЖАЙШИЙ УРОК: " + ns.label + " (" + ns.durationMin + " МИН)";
+
+          const ruleEl = document.getElementById("waitingPassRuleDesc");
+          if (ns.mode === "60MIN") {
+            ruleEl.innerHTML =
+              'В версии на <b>60 минут (' + ns.label + ')</b> для зачёта этапа необходимо пройти <b>все 3 уровня</b> («Знание» → «Понимание» → «Применение»), чтобы флаг стал <b class="text-emerald-700">ДОСТАТОЧНЫМ (+1 балл)</b>.';
+          } else {
+            ruleEl.innerHTML =
+              'В версии на <b>35 минут (' + ns.label + ')</b> для зачёта этапа достаточно пройти <b>2 уровня из 3</b> («Знание» → «Понимание»), чтобы флаг стал <b class="text-emerald-700">ДОСТАТОЧНЫМ (+1 балл)</b>.';
+          }
+
+          activeStageIndex = -1;
+          return;
+        }
+
+        if (status.state === "FINISHED") {
+          waitingScreenEl.classList.add("hidden");
+          lessonScreenEl.classList.add("hidden");
+          pauseOverlayEl.classList.add("hidden");
+          finalScreenEl.classList.remove("hidden");
+          clearTaskTimers();
+          renderFinalScreen();
+          activeStageIndex = -1;
+          return;
+        }
+
+        // ACTIVE
+        waitingScreenEl.classList.add("hidden");
+        finalScreenEl.classList.add("hidden");
+        lessonScreenEl.classList.remove("hidden");
+
+        // Отображение оверлея паузы, если ученик поставил урок на паузу
+        if (appState.isPaused && appState.pauseStartedAtMs) {
+          pauseOverlayEl.classList.remove("hidden");
+          const pauseElapsedSec = Math.floor((Date.now() - appState.pauseStartedAtMs) / 1000);
+          const pauseRemainingSec = Math.max(0, MAX_PAUSE_SECONDS - pauseElapsedSec);
+          document.getElementById("pauseCountdownDisplay").textContent = formatMS(pauseRemainingSec);
+        } else {
+          pauseOverlayEl.classList.add("hidden");
+        }
+
+        const elapsed = status.elapsedSec;
+        let foundStageIdx = -1;
+        for (let i = 0; i < STAGES_CONFIG.length; i++) {
+          if (elapsed >= STAGES_CONFIG[i].startOffsetSec && elapsed < STAGES_CONFIG[i].endOffsetSec) {
+            foundStageIdx = i;
+            break;
+          }
+        }
+        if (foundStageIdx === -1) {
+          foundStageIdx = STAGES_CONFIG.length - 1;
+        }
+
+        const stageCfg = STAGES_CONFIG[foundStageIdx];
+        const stageRemainingSec = stageCfg.endOffsetSec - elapsed;
+
+        if (foundStageIdx !== activeStageIndex) {
+          activeStageIndex = foundStageIdx;
+          loadCurrentStageTask();
+        }
+
+        updateHeaderAndStepper(activeStageIndex, stageRemainingSec);
+      }
+
+      function initControls() {
+        const panel = document.getElementById("teacherPanel");
+        const waitingBadge = document.getElementById("secretTeacherBadge");
+        const headerBadge = document.getElementById("headerStageBadge");
+        let clickCount = 0;
+        let clickTimer = null;
+
+        function handleSecretClick() {
+          clickCount += 1;
+          if (clickTimer) clearTimeout(clickTimer);
+          if (clickCount >= 5) {
+            panel.classList.toggle("hidden");
+            clickCount = 0;
+          } else {
+            clickTimer = setTimeout(function () {
+              clickCount = 0;
+            }, 1800);
+          }
+        }
+
+        if (waitingBadge) waitingBadge.addEventListener("click", handleSecretClick);
+        if (headerBadge) headerBadge.addEventListener("click", handleSecretClick);
+
+        window.addEventListener("keydown", function (e) {
+          if (e.altKey && (e.key === "s" || e.key === "S" || e.key === "ы" || e.key === "Ы")) {
+            e.preventDefault();
+            panel.classList.toggle("hidden");
+          }
+        });
+
+        // Кнопки паузы ученика
+        const pauseBtn = document.getElementById("btnStudentPause");
+        if (pauseBtn) {
+          pauseBtn.addEventListener("click", startStudentPause);
+        }
+        const resumeBtn = document.getElementById("btnResumeFromPause");
+        if (resumeBtn) {
+          resumeBtn.addEventListener("click", resumeFromStudentPause);
+        }
+
+        // Кнопки панели учителя
+        document.getElementById("closeTeacherPanelBtn").addEventListener("click", function () {
+          panel.classList.add("hidden");
+        });
+
+        document.getElementById("btnForceStart60").addEventListener("click", function () {
+          applyLessonModeTimings("60MIN");
+          appState.totalPausedMs = 0;
+          appState.isPaused = false;
+          appState.pauseStartedAtMs = null;
+          saveState();
+          timeMode = "FORCE_LESSON";
+          forcedStartTimestampMs = Date.now();
+          activeStageIndex = -1;
+          tickMainLoop();
+        });
+
+        document.getElementById("btnForceStart35").addEventListener("click", function () {
+          applyLessonModeTimings("35MIN");
+          appState.totalPausedMs = 0;
+          appState.isPaused = false;
+          appState.pauseStartedAtMs = null;
+          saveState();
+          timeMode = "FORCE_LESSON";
+          forcedStartTimestampMs = Date.now();
+          activeStageIndex = -1;
+          tickMainLoop();
+        });
+
+        document.getElementById("btnForceWaiting").addEventListener("click", function () {
+          timeMode = "AUTO";
+          forcedStartTimestampMs = null;
+          lockNextUpcomingSlotOnStartup();
+          tickMainLoop();
+        });
+
+        document.getElementById("btnForceEndScreen").addEventListener("click", function () {
+          timeMode = "FORCE_FINAL";
+          tickMainLoop();
+        });
+
+        document.getElementById("btnResetProgress").addEventListener("click", function () {
+          try {
+            sessionStorage.removeItem(LESSON_META.StorageKey);
+          } catch (err) {}
+          appState = createFreshState();
+          saveState();
+          activeStageIndex = -1;
+          if (timeMode === "FORCE_LESSON") {
+            forcedStartTimestampMs = Date.now();
+          }
+          tickMainLoop();
+        });
+
+        const jumpContainer = document.getElementById("teacherStageJump");
+        jumpContainer.innerHTML = STAGES_CONFIG.map(function (s, idx) {
+          return (
+            '<button type="button" data-jump="' + idx + '" class="bg-slate-800 hover:bg-blue-600 text-white text-xs font-bold py-1.5 rounded-lg border border-slate-700 transition cursor-pointer">' +
+              'Эт. ' + s.id +
+            '</button>'
+          );
+        }).join("");
+
+        const jumpBtns = jumpContainer.querySelectorAll("button[data-jump]");
+        for (let i = 0; i < jumpBtns.length; i++) {
+          jumpBtns[i].addEventListener("click", function () {
+            const idx = parseInt(this.getAttribute("data-jump"), 10);
+            appState.totalPausedMs = 0;
+            appState.isPaused = false;
+            appState.pauseStartedAtMs = null;
+            saveState();
+            timeMode = "FORCE_LESSON";
+            forcedStartTimestampMs = Date.now() - STAGES_CONFIG[idx].startOffsetSec * 1000;
+            activeStageIndex = -1;
+            tickMainLoop();
+          });
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        applyStaticMetaLabels();
+        initControls();
+        tickMainLoop();
+        setInterval(tickMainLoop, 1000);
+      });
+    })();
+  </script>
+</body>
+</html>
